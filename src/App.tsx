@@ -12,6 +12,11 @@ import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import CreateAccount from "./pages/CreateAccount";
+import Categories from "./pages/Categories";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
+import ReelComments from "./pages/ReelComments";
+import ShareSheet from "./pages/ShareSheet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +37,11 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/reel/:id/comments" element={<ReelComments />} />
+          <Route path="/share" element={<ShareSheet />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

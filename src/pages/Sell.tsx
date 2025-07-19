@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { MapPin } from "lucide-react";
+import { useState, useRef } from "react";
+import { MapPin, Camera, Upload, X, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import BottomNavigation from "@/components/BottomNavigation";
 
 const Sell = () => {
@@ -14,6 +15,10 @@ const Sell = () => {
     category: "",
     location: ""
   });
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const conditions = ["New", "Like New", "Good", "Fair"];
   const categories = ["Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Cars"];
@@ -22,9 +27,27 @@ const Sell = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setImages(prev => [...prev, ...files].slice(0, 5)); // Max 5 images
+  };
+
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) setVideo(file);
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = () => {
+    setVideo(null);
+  };
+
   const handlePublish = () => {
     // Handle listing publication
-    console.log("Publishing listing:", formData);
+    console.log("Publishing listing:", { ...formData, images, video });
   };
 
   return (
@@ -35,6 +58,119 @@ const Sell = () => {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Media Upload */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Photos & Video</h2>
+          
+          {/* Image Upload */}
+          <div>
+            <Label>Photos (Required) - {images.length}/5</Label>
+            <div className="grid grid-cols-3 gap-3 mt-2">
+              {images.map((image, index) => (
+                <div key={index} className="relative aspect-square">
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt={`Upload ${index + 1}`}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+              
+              {images.length < 5 && (
+                <Card 
+                  className="aspect-square cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <CardContent className="flex flex-col items-center justify-center h-full p-2">
+                    <Camera className="h-6 w-6 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground text-center">Add Photo</span>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            
+            <div className="flex gap-2 mt-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => imageInputRef.current?.click()}
+                className="flex-1"
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Camera
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => imageInputRef.current?.click()}
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Gallery
+              </Button>
+            </div>
+          </div>
+
+          {/* Video Upload */}
+          <div>
+            <Label>Video (Optional)</Label>
+            {video ? (
+              <div className="relative mt-2">
+                <video
+                  src={URL.createObjectURL(video)}
+                  className="w-full h-32 object-cover rounded-lg"
+                  controls
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                  onClick={removeVideo}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Card 
+                className="mt-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => videoInputRef.current?.click()}
+              >
+                <CardContent className="flex items-center justify-center p-6">
+                  <div className="text-center">
+                    <Video className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Add a video (optional)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Max 30 seconds</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoUpload}
+              className="hidden"
+            />
+          </div>
+        </div>
         {/* Description */}
         <div className="space-y-2">
           <Textarea

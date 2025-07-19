@@ -4,8 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import BottomNavigation from "@/components/BottomNavigation";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const recentActivity = [
     {
       id: 1,
@@ -47,13 +49,13 @@ const Profile = () => {
         <div className="flex items-center gap-4 mb-6">
           <Avatar className="w-16 h-16">
             <AvatarImage src="/api/placeholder/64/64" />
-            <AvatarFallback className="bg-primary text-white text-xl">JD</AvatarFallback>
+            <AvatarFallback className="bg-primary text-white text-xl">SU</AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
-            <h1 className="text-xl font-bold">@johndoe</h1>
-            <p className="text-lg font-medium text-primary">JOHN DOE</p>
-            <p className="text-muted-foreground">john@example.com</p>
+            <h1 className="text-xl font-bold">@sujatha</h1>
+            <p className="text-lg font-medium text-primary">SUJATHA</p>
+            <p className="text-muted-foreground">sujatha@mom.com</p>
             <div className="flex items-center gap-1 mt-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm text-green-600 font-medium">Verified</span>
@@ -128,6 +130,13 @@ const Profile = () => {
                   className={`flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer ${
                     index !== accountOptions.length - 1 ? "border-b" : ""
                   }`}
+                  onClick={() => {
+                    if (option.label === "Settings") {
+                      navigate("/settings");
+                    } else if (option.label === "Notifications") {
+                      navigate("/notifications");
+                    }
+                  }}
                 >
                   <Icon className="h-5 w-5 text-primary" />
                   <span className="flex-1 font-medium">{option.label}</span>
@@ -144,6 +153,10 @@ const Profile = () => {
         <Button
           variant="outline"
           className="w-full text-destructive border-destructive/20 hover:bg-destructive/5"
+          onClick={() => {
+            // Handle logout
+            navigate("/auth");
+          }}
         >
           <LogOut className="h-4 w-4 mr-2" />
           Log Out

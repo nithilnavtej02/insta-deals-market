@@ -2,24 +2,79 @@ import { useState } from "react";
 import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/BottomNavigation";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const Reels = () => {
+  const navigate = useNavigate();
   const [currentReel, setCurrentReel] = useState(0);
-
+  
   const reels = [
     {
       id: 1,
       title: "Designer Handbags",
-      description: "Authentic designer handbags in excellent condition. Comes with du...",
+      description: "Authentic designer handbags in excellent condition. Comes with dust bags and certificates...",
       seller: "@luxury_bags",
       price: "$400-$2000",
       likes: "2.2K",
       comments: "178",
       isLiked: false,
-      isSaved: false
+      isSaved: false,
+      gradient: "from-purple-900 to-pink-900"
+    },
+    {
+      id: 2,
+      title: "Gaming Setup Complete",
+      description: "Ultimate gaming setup with RGB lighting, mechanical keyboard, and high-end monitor...",
+      seller: "@gamer_pro",
+      price: "$2,500",
+      likes: "5.8K",
+      comments: "324",
+      isLiked: true,
+      isSaved: false,
+      gradient: "from-blue-900 to-purple-900"
+    },
+    {
+      id: 3,
+      title: "Vintage Leather Jacket",
+      description: "Classic vintage leather jacket from the 80s. Perfect condition, rare find...",
+      seller: "@vintage_style",
+      price: "$150",
+      likes: "1.5K",
+      comments: "89",
+      isLiked: false,
+      isSaved: true,
+      gradient: "from-green-900 to-blue-900"
+    },
+    {
+      id: 4,
+      title: "iPhone 14 Pro Max",
+      description: "Latest iPhone in pristine condition with all original accessories and warranty...",
+      seller: "@tech_deals",
+      price: "$899",
+      likes: "8.1K",
+      comments: "567",
+      isLiked: false,
+      isSaved: false,
+      gradient: "from-red-900 to-purple-900"
+    },
+    {
+      id: 5,
+      title: "Art Collection Pieces",
+      description: "Beautiful handcrafted art pieces from local artists. Perfect for home decoration...",
+      seller: "@art_gallery",
+      price: "$200-$800",
+      likes: "3.4K",
+      comments: "156",
+      isLiked: true,
+      isSaved: true,
+      gradient: "from-orange-900 to-red-900"
     }
   ];
+
+  const [reelStates, setReelStates] = useState(
+    reels.map(reel => ({ isLiked: reel.isLiked, isSaved: reel.isSaved, likes: reel.likes }))
+  );
 
   const reel = reels[currentReel];
 
@@ -34,7 +89,7 @@ const Reels = () => {
       </div>
 
       {/* Video/Reel Container */}
-      <div className="relative h-screen w-full bg-gradient-to-br from-purple-900 to-pink-900">
+      <div className={`relative h-screen w-full bg-gradient-to-br ${reel.gradient}`}>
         {/* Play Button Overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Button
@@ -65,10 +120,19 @@ const Reels = () => {
               variant="ghost"
               size="icon"
               className="bg-black/20 text-white rounded-full backdrop-blur-sm mb-1"
+              onClick={() => {
+                const newStates = [...reelStates];
+                newStates[currentReel].isLiked = !newStates[currentReel].isLiked;
+                const currentLikes = parseInt(newStates[currentReel].likes.replace('K', '000').replace('.', ''));
+                newStates[currentReel].likes = newStates[currentReel].isLiked 
+                  ? `${((currentLikes + 1) / 1000).toFixed(1)}K`
+                  : `${((currentLikes - 1) / 1000).toFixed(1)}K`;
+                setReelStates(newStates);
+              }}
             >
-              <Heart className={cn("h-6 w-6", reel.isLiked && "fill-red-500 text-red-500")} />
+              <Heart className={cn("h-6 w-6", reelStates[currentReel]?.isLiked && "fill-red-500 text-red-500")} />
             </Button>
-            <span className="text-white text-sm font-medium">{reel.likes}</span>
+            <span className="text-white text-sm font-medium">{reelStates[currentReel]?.likes || reel.likes}</span>
           </div>
 
           <div className="flex flex-col items-center">
@@ -76,6 +140,7 @@ const Reels = () => {
               variant="ghost"
               size="icon"
               className="bg-black/20 text-white rounded-full backdrop-blur-sm mb-1"
+              onClick={() => navigate(`/reel/${reel.id}/comments`)}
             >
               <MessageCircle className="h-6 w-6" />
             </Button>
@@ -86,6 +151,7 @@ const Reels = () => {
             variant="ghost"
             size="icon"
             className="bg-black/20 text-white rounded-full backdrop-blur-sm"
+            onClick={() => navigate('/share')}
           >
             <Share className="h-6 w-6" />
           </Button>
@@ -94,8 +160,13 @@ const Reels = () => {
             variant="ghost"
             size="icon"
             className="bg-black/20 text-white rounded-full backdrop-blur-sm"
+            onClick={() => {
+              const newStates = [...reelStates];
+              newStates[currentReel].isSaved = !newStates[currentReel].isSaved;
+              setReelStates(newStates);
+            }}
           >
-            <Bookmark className={cn("h-6 w-6", reel.isSaved && "fill-yellow-500 text-yellow-500")} />
+            <Bookmark className={cn("h-6 w-6", reelStates[currentReel]?.isSaved && "fill-yellow-500 text-yellow-500")} />
           </Button>
         </div>
 
