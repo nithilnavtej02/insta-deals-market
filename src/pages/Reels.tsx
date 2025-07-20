@@ -12,6 +12,45 @@ const Reels = () => {
   const reels = [
     {
       id: 1,
+      title: "Vintage Watch Collection",
+      description: "Check out this amazing vintage watch collection! Each piece tells a story of timeless craftsmanship...",
+      seller: "@vintage_collector",
+      price: "$150-$500",
+      likes: "1.2K",
+      comments: "145",
+      isLiked: false,
+      isSaved: false,
+      gradient: "from-amber-900 to-orange-900",
+      image: "/lovable-uploads/7ca162be-1e79-409e-bfbf-704e1e3a247a.png"
+    },
+    {
+      id: 2,
+      title: "Sneaker Collection",
+      description: "Rare and limited edition sneakers in perfect condition. All authentic with original boxes...",
+      seller: "@sneaker_head",
+      price: "$200-$800",
+      likes: "3.5K",
+      comments: "289",
+      isLiked: true,
+      isSaved: false,
+      gradient: "from-blue-900 to-cyan-900",
+      image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png"
+    },
+    {
+      id: 3,
+      title: "Gaming Setup Tour",
+      description: "My complete gaming setup for sale! RGB lighting, mechanical keyboard, high-end monitor and more...",
+      seller: "@pro_gamer",
+      price: "$1200",
+      likes: "2.6K",
+      comments: "289",
+      isLiked: false,
+      isSaved: true,
+      gradient: "from-purple-900 to-pink-900",
+      image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png"
+    },
+    {
+      id: 4,
       title: "Designer Handbags",
       description: "Authentic designer handbags in excellent condition. Comes with dust bags and certificates...",
       seller: "@luxury_bags",
@@ -23,19 +62,19 @@ const Reels = () => {
       gradient: "from-purple-900 to-pink-900"
     },
     {
-      id: 2,
-      title: "Gaming Setup Complete",
-      description: "Ultimate gaming setup with RGB lighting, mechanical keyboard, and high-end monitor...",
-      seller: "@gamer_pro",
-      price: "$2,500",
-      likes: "5.8K",
-      comments: "324",
+      id: 5,
+      title: "iPhone 14 Pro Max",
+      description: "Latest iPhone in pristine condition with all original accessories and warranty...",
+      seller: "@tech_deals",
+      price: "$899",
+      likes: "8.1K",
+      comments: "567",
       isLiked: true,
       isSaved: false,
       gradient: "from-blue-900 to-purple-900"
     },
     {
-      id: 3,
+      id: 6,
       title: "Vintage Leather Jacket",
       description: "Classic vintage leather jacket from the 80s. Perfect condition, rare find...",
       seller: "@vintage_style",
@@ -47,19 +86,7 @@ const Reels = () => {
       gradient: "from-green-900 to-blue-900"
     },
     {
-      id: 4,
-      title: "iPhone 14 Pro Max",
-      description: "Latest iPhone in pristine condition with all original accessories and warranty...",
-      seller: "@tech_deals",
-      price: "$899",
-      likes: "8.1K",
-      comments: "567",
-      isLiked: false,
-      isSaved: false,
-      gradient: "from-red-900 to-purple-900"
-    },
-    {
-      id: 5,
+      id: 7,
       title: "Art Collection Pieces",
       description: "Beautiful handcrafted art pieces from local artists. Perfect for home decoration...",
       seller: "@art_gallery",
@@ -69,6 +96,42 @@ const Reels = () => {
       isLiked: true,
       isSaved: true,
       gradient: "from-orange-900 to-red-900"
+    },
+    {
+      id: 8,
+      title: "Professional Camera Gear",
+      description: "Complete photography setup with lenses, tripods, and accessories. Perfect for professionals...",
+      seller: "@photo_pro",
+      price: "$1,800",
+      likes: "4.2K",
+      comments: "298",
+      isLiked: false,
+      isSaved: false,
+      gradient: "from-gray-900 to-slate-900"
+    },
+    {
+      id: 9,
+      title: "Mountain Bike Collection",
+      description: "High-end mountain bikes for all terrains. Lightweight carbon frame with premium components...",
+      seller: "@bike_enthusiast",
+      price: "$800-$3000",
+      likes: "1.8K",
+      comments: "134",
+      isLiked: true,
+      isSaved: false,
+      gradient: "from-emerald-900 to-teal-900"
+    },
+    {
+      id: 10,
+      title: "Home Studio Equipment",
+      description: "Professional music production equipment. High-quality mics, audio interface, and monitors...",
+      seller: "@music_producer",
+      price: "$1,200",
+      likes: "2.9K",
+      comments: "187",
+      isLiked: false,
+      isSaved: true,
+      gradient: "from-violet-900 to-purple-900"
     }
   ];
 
@@ -90,6 +153,18 @@ const Reels = () => {
 
       {/* Video/Reel Container */}
       <div className={`relative h-screen w-full bg-gradient-to-br ${reel.gradient}`}>
+        {/* Background Image if available */}
+        {reel.image && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-40"
+            style={{
+              backgroundImage: `url(${reel.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          />
+        )}
+        
         {/* Play Button Overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Button

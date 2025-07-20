@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Bell, MapPin } from "lucide-react";
+import { Search, Bell, MapPin, Heart, Share } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -132,13 +132,14 @@ const Home = () => {
           <h1 className="text-2xl font-bold">Hi sujatha! 👋</h1>
         </div>
 
-        <div className="relative">
+        <div className="relative cursor-pointer" onClick={() => navigate('/search')}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Search products, categories..."
+            placeholder="Search products, sellers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 rounded-full"
+            className="pl-10 h-12 rounded-full cursor-pointer"
+            readOnly
           />
         </div>
       </div>
@@ -166,12 +167,16 @@ const Home = () => {
       <div className="px-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Latest Products</h2>
-          <Button variant="link" className="text-primary">See All</Button>
+          <Button variant="link" className="text-primary" onClick={() => navigate('/search?tab=products')}>See All</Button>
         </div>
 
         <div className="space-y-4">
           {products.map((product) => (
-            <Card key={product.id} className="overflow-hidden">
+            <Card 
+              key={product.id} 
+              className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => navigate(`/product/${product.id}`)}
+            >
               <CardContent className="p-0">
                 <img 
                   src={product.image} 
@@ -182,9 +187,26 @@ const Home = () => {
                   <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
                   <p className="text-2xl font-bold text-primary mb-2">{product.price}</p>
                   <p className="text-sm text-muted-foreground mb-1">{product.location}</p>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-primary">{product.seller}</p>
                     <p className="text-sm text-muted-foreground">{product.time}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">24</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-1 h-auto"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/share');
+                      }}
+                    >
+                      <Share className="h-4 w-4 text-muted-foreground" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>

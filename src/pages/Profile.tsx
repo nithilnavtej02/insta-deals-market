@@ -46,20 +46,32 @@ const Profile = () => {
       {/* Header */}
       <div className="bg-white px-4 py-6">
         {/* Profile Info */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-start gap-4 mb-6">
           <Avatar className="w-16 h-16">
-            <AvatarImage src="/api/placeholder/64/64" />
+            <AvatarImage src="/src/assets/profile-pic.jpg" />
             <AvatarFallback className="bg-primary text-white text-xl">SU</AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
-            <h1 className="text-xl font-bold">@sujatha</h1>
-            <p className="text-lg font-medium text-primary">SUJATHA</p>
-            <p className="text-muted-foreground">sujatha@mom.com</p>
-            <div className="flex items-center gap-1 mt-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-green-600 font-medium">Verified</span>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl font-bold">@sujatha</h1>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs border-green-500 text-green-600 hover:bg-green-50"
+              >
+                ✓ Verified
+              </Button>
             </div>
+            <p className="text-lg font-medium text-primary mb-1">SUJATHA</p>
+            <p className="text-muted-foreground">sujatha@mom.com</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground text-xs p-0 h-auto mt-1"
+            >
+              📍 Mumbai, India
+            </Button>
           </div>
         </div>
 
