@@ -167,6 +167,8 @@ const Reels = () => {
               <div className={`w-full h-full bg-gradient-to-br ${reel.gradient}`} />
             )}
             
+            {/* Overlay for better text readability - removed dark overlay */}
+            
             {/* Play Button */}
             <div className="absolute inset-0 flex items-center justify-center">
               <Button
@@ -187,8 +189,8 @@ const Reels = () => {
               Buy
             </Button>
 
-            {/* Content - Bottom Left */}
-            <div className="absolute bottom-5 left-5 right-24">
+            {/* Content - Bottom Left with subtle background */}
+            <div className="absolute bottom-5 left-5 right-24 bg-black/30 backdrop-blur-sm rounded-lg p-3">
               <h3 className="text-white text-lg font-bold mb-1.5">{reel.title}</h3>
               <p className="text-white/90 text-sm mb-2.5 line-clamp-2 leading-5">{reel.description}</p>
               <div className="flex items-center justify-between">
@@ -198,15 +200,15 @@ const Reels = () => {
             </div>
 
             {/* Right Actions */}
-            <div className="absolute right-5 bottom-24 flex flex-col items-center space-y-4">
+            <div className="absolute right-5 bottom-32 flex flex-col items-center space-y-4">
               <div className="flex flex-col items-center">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`w-11 h-11 rounded-full border-0 ${
+                  className={`w-11 h-11 rounded-full border-0 backdrop-blur-sm ${
                     reelStates[index]?.isLiked 
-                      ? 'bg-red-500/30 hover:bg-red-500/40' 
-                      : 'bg-white/20 hover:bg-white/30'
+                      ? 'bg-red-500/40 hover:bg-red-500/50' 
+                      : 'bg-white/30 hover:bg-white/40'
                   }`}
                   onClick={() => {
                     const newStates = [...reelStates];
@@ -227,7 +229,7 @@ const Reels = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                  className="w-11 h-11 rounded-full bg-white/30 hover:bg-white/40 border-0 backdrop-blur-sm"
                   onClick={() => navigate(`/reel/${reel.id}/comments`)}
                 >
                   <MessageCircle className="h-6 w-6 text-white" />
@@ -238,7 +240,7 @@ const Reels = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                className="w-11 h-11 rounded-full bg-white/30 hover:bg-white/40 border-0 backdrop-blur-sm"
                 onClick={() => navigate('/share')}
               >
                 <Share className="h-6 w-6 text-white" />
@@ -247,7 +249,7 @@ const Reels = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                className="w-11 h-11 rounded-full bg-white/30 hover:bg-white/40 border-0 backdrop-blur-sm"
                 onClick={() => {
                   const newStates = [...reelStates];
                   newStates[index].isSaved = !newStates[index].isSaved;

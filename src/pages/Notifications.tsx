@@ -120,6 +120,17 @@ const Notifications = () => {
               className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
                 notification.unread ? "bg-primary/5" : ""
               }`}
+              onClick={() => {
+                if (notification.type === "message") {
+                  navigate(`/chat/${notification.id}`);
+                } else if (notification.type === "follow") {
+                  navigate(`/seller/${notification.user.slice(1)}`);
+                } else if (notification.type === "like") {
+                  navigate('/my-listings');
+                } else if (notification.type === "review") {
+                  navigate('/reviews');
+                }
+              }}
             >
               <div className="flex items-start gap-3">
                 {/* Icon */}

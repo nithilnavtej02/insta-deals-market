@@ -20,6 +20,11 @@ import ShareSheet from "./pages/ShareSheet";
 import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
 import SellerProfile from "./pages/SellerProfile";
+import MyListings from "./pages/MyListings";
+import Favorites from "./pages/Favorites";
+import Reviews from "./pages/Reviews";
+import PrivacySecurity from "./pages/PrivacySecurity";
+import Location from "./pages/Location";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +53,11 @@ const App = () => (
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/search" element={<Search />} />
           <Route path="/profile/:username" element={<SellerProfile />} />
+          <Route path="/my-listings" element={<MyListings />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/privacy-security" element={<PrivacySecurity />} />
+          <Route path="/location" element={<Location />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -119,7 +119,10 @@ const Home = () => {
       {/* Header */}
       <div className="bg-white px-4 py-3 border-b">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-colors"
+            onClick={() => navigate('/location')}
+          >
             <MapPin className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium text-primary">New York, NY</span>
           </div>

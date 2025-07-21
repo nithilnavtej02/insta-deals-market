@@ -88,7 +88,7 @@ const Messages = () => {
               {/* Avatar */}
               <div className="relative">
                 <Avatar className="w-10 h-10">
-                  <AvatarImage src={conversation.avatar} />
+                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`} />
                   <AvatarFallback>{conversation.username.slice(1, 3).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 {conversation.isOnline && (

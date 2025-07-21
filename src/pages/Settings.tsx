@@ -3,33 +3,46 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    phoneNotifications: false,
+    showActivityStatus: true,
+    anonymousMode: false,
+    darkMode: false,
+    pushNotifications: true
+  });
+
+  const updateSetting = (key: string, value: boolean) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
 
   const settingsGroups = [
     {
       title: "Account",
       items: [
-        { label: "Email Notifications", icon: Mail, type: "switch", enabled: true },
-        { label: "Phone Notifications", icon: Smartphone, type: "switch", enabled: false },
+        { label: "Email Notifications", icon: Mail, type: "switch", enabled: settings.emailNotifications, key: "emailNotifications" },
+        { label: "Phone Notifications", icon: Smartphone, type: "switch", enabled: settings.phoneNotifications, key: "phoneNotifications" },
         { label: "Two-Factor Authentication", icon: Lock, type: "link" },
       ]
     },
     {
       title: "Privacy",
       items: [
-        { label: "Show Activity Status", icon: Eye, type: "switch", enabled: true },
-        { label: "Anonymous Mode", icon: Shield, type: "switch", enabled: false },
+        { label: "Show Activity Status", icon: Eye, type: "switch", enabled: settings.showActivityStatus, key: "showActivityStatus" },
+        { label: "Anonymous Mode", icon: Shield, type: "switch", enabled: settings.anonymousMode, key: "anonymousMode" },
         { label: "Privacy Policy", icon: Shield, type: "link" },
       ]
     },
     {
       title: "Preferences",
       items: [
-        { label: "Dark Mode", icon: Moon, type: "switch", enabled: false },
+        { label: "Dark Mode", icon: Moon, type: "switch", enabled: settings.darkMode, key: "darkMode" },
         { label: "Language", icon: Globe, type: "link", value: "English" },
-        { label: "Push Notifications", icon: Bell, type: "switch", enabled: true },
+        { label: "Push Notifications", icon: Bell, type: "switch", enabled: settings.pushNotifications, key: "pushNotifications" },
       ]
     }
   ];
@@ -66,7 +79,10 @@ const Settings = () => {
                       <span className="flex-1 font-medium">{item.label}</span>
                       
                       {item.type === "switch" && (
-                        <Switch checked={item.enabled} />
+                        <Switch 
+                          checked={item.enabled} 
+                          onCheckedChange={(checked) => item.key && updateSetting(item.key, checked)}
+                        />
                       )}
                       
                       {item.type === "link" && (
