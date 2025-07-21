@@ -142,120 +142,123 @@ const Reels = () => {
   const reel = reels[currentReel];
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/50 to-transparent">
-        <div className="flex items-center justify-between p-4 pt-12">
-          <h1 className="text-white text-lg font-semibold">Product Reels</h1>
-          <p className="text-white/80 text-sm">Discover amazing products</p>
-        </div>
+      <div className="sticky top-0 z-50 bg-black px-5 py-4">
+        <h1 className="text-white text-2xl font-bold">Product Reels</h1>
+        <p className="text-white/70 text-base mt-1">Discover amazing products</p>
       </div>
 
-      {/* Video/Reel Container */}
-      <div className={`relative h-screen w-full bg-gradient-to-br ${reel.gradient}`}>
-        {/* Background Image if available */}
-        {reel.image && (
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-40"
-            style={{
-              backgroundImage: `url(${reel.image})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          />
-        )}
-        
-        {/* Play Button Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="bg-black/30 text-white rounded-full backdrop-blur-sm"
+      {/* Reels Container - Scrollable */}
+      <div className="relative overflow-y-auto">
+        {reels.map((reel, index) => (
+          <div
+            key={reel.id}
+            className="relative w-full h-[75vh] mx-3 my-2 rounded-[20px] overflow-hidden bg-gray-800"
           >
-            <Play className="h-8 w-8 ml-1" />
-          </Button>
-        </div>
+            {/* Background Image */}
+            {reel.image ? (
+              <img
+                src={reel.image}
+                alt={reel.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${reel.gradient}`} />
+            )}
+            
+            {/* Play Button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full w-16 h-16 border-0"
+              >
+                <Play className="h-8 w-8 fill-white" />
+              </Button>
+            </div>
 
-        {/* Buy Button */}
-        <div className="absolute top-20 right-4 z-30">
-          <Button
-            variant="accent-blue"
-            size="sm"
-            className="rounded-full shadow-lg"
-          >
-            <ShoppingBag className="h-4 w-4 mr-1" />
-            Buy
-          </Button>
-        </div>
-
-        {/* Right Side Actions */}
-        <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-20">
-          <div className="flex flex-col items-center">
+            {/* Buy Button */}
             <Button
-              variant="ghost"
-              size="icon"
-              className="bg-black/20 text-white rounded-full backdrop-blur-sm mb-1"
-              onClick={() => {
-                const newStates = [...reelStates];
-                newStates[currentReel].isLiked = !newStates[currentReel].isLiked;
-                const currentLikes = parseInt(newStates[currentReel].likes.replace('K', '000').replace('.', ''));
-                newStates[currentReel].likes = newStates[currentReel].isLiked 
-                  ? `${((currentLikes + 1) / 1000).toFixed(1)}K`
-                  : `${((currentLikes - 1) / 1000).toFixed(1)}K`;
-                setReelStates(newStates);
-              }}
+              className="absolute top-5 right-5 bg-blue-600/95 hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-[20px] flex items-center gap-1.5 shadow-lg"
+              onClick={() => navigate(`/product/${reel.id}`)}
             >
-              <Heart className={cn("h-6 w-6", reelStates[currentReel]?.isLiked && "fill-red-500 text-red-500")} />
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Buy
             </Button>
-            <span className="text-white text-sm font-medium">{reelStates[currentReel]?.likes || reel.likes}</span>
-          </div>
 
-          <div className="flex flex-col items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-black/20 text-white rounded-full backdrop-blur-sm mb-1"
-              onClick={() => navigate(`/reel/${reel.id}/comments`)}
-            >
-              <MessageCircle className="h-6 w-6" />
-            </Button>
-            <span className="text-white text-sm font-medium">{reel.comments}</span>
-          </div>
+            {/* Content - Bottom Left */}
+            <div className="absolute bottom-5 left-5 right-24">
+              <h3 className="text-white text-lg font-bold mb-1.5">{reel.title}</h3>
+              <p className="text-white/90 text-sm mb-2.5 line-clamp-2 leading-5">{reel.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-blue-400 text-sm font-medium">{reel.seller}</span>
+                <span className="text-white font-bold text-base">{reel.price}</span>
+              </div>
+            </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-black/20 text-white rounded-full backdrop-blur-sm"
-            onClick={() => navigate('/share')}
-          >
-            <Share className="h-6 w-6" />
-          </Button>
+            {/* Right Actions */}
+            <div className="absolute right-5 bottom-24 flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`w-11 h-11 rounded-full border-0 ${
+                    reelStates[index]?.isLiked 
+                      ? 'bg-red-500/30 hover:bg-red-500/40' 
+                      : 'bg-white/20 hover:bg-white/30'
+                  }`}
+                  onClick={() => {
+                    const newStates = [...reelStates];
+                    newStates[index].isLiked = !newStates[index].isLiked;
+                    const currentLikes = parseInt(newStates[index].likes.replace('K', '000').replace('.', ''));
+                    newStates[index].likes = newStates[index].isLiked 
+                      ? `${((currentLikes + 1) / 1000).toFixed(1)}K`
+                      : `${((currentLikes - 1) / 1000).toFixed(1)}K`;
+                    setReelStates(newStates);
+                  }}
+                >
+                  <Heart className={`h-6 w-6 ${reelStates[index]?.isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                </Button>
+                <span className="text-white text-xs font-semibold mt-1.5">{reelStates[index]?.likes || reel.likes}</span>
+              </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-black/20 text-white rounded-full backdrop-blur-sm"
-            onClick={() => {
-              const newStates = [...reelStates];
-              newStates[currentReel].isSaved = !newStates[currentReel].isSaved;
-              setReelStates(newStates);
-            }}
-          >
-            <Bookmark className={cn("h-6 w-6", reelStates[currentReel]?.isSaved && "fill-yellow-500 text-yellow-500")} />
-          </Button>
-        </div>
+              <div className="flex flex-col items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                  onClick={() => navigate(`/reel/${reel.id}/comments`)}
+                >
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </Button>
+                <span className="text-white text-xs font-semibold mt-1.5">{reel.comments}</span>
+              </div>
 
-        {/* Bottom Content */}
-        <div className="absolute bottom-32 left-4 right-20 z-20">
-          <div className="text-white">
-            <h2 className="text-2xl font-bold mb-2">{reel.title}</h2>
-            <p className="text-white/90 mb-3 leading-relaxed">{reel.description}</p>
-            <div className="flex items-center justify-between">
-              <p className="text-primary-light font-semibold text-lg">{reel.seller}</p>
-              <p className="text-white font-bold text-xl">{reel.price}</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                onClick={() => navigate('/share')}
+              >
+                <Share className="h-6 w-6 text-white" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 border-0"
+                onClick={() => {
+                  const newStates = [...reelStates];
+                  newStates[index].isSaved = !newStates[index].isSaved;
+                  setReelStates(newStates);
+                }}
+              >
+                <Bookmark className={`h-6 w-6 text-white ${reelStates[index]?.isSaved ? 'fill-white' : ''}`} />
+              </Button>
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
       <BottomNavigation />

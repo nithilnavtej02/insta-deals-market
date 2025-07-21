@@ -19,6 +19,7 @@ import ReelComments from "./pages/ReelComments";
 import ShareSheet from "./pages/ShareSheet";
 import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
+import SellerProfile from "./pages/SellerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/share" element={<ShareSheet />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/profile/:username" element={<SellerProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
