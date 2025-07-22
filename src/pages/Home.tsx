@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [likedProducts, setLikedProducts] = useState<number[]>([]);
 
   const categories = [
     { name: "Electronics", icon: "📱", color: "bg-blue-100" },
@@ -155,8 +156,12 @@ const Home = () => {
         </div>
         
         <div className="flex gap-4">
-          {categories.map((category) => (
-            <div key={category.name} className="flex flex-col items-center">
+          {categories.slice(0, 4).map((category) => (
+            <div 
+              key={category.name} 
+              className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate(`/categories/${category.name.toLowerCase()}`)}
+            >
               <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mb-2`}>
                 <span className="text-2xl">{category.icon}</span>
               </div>
@@ -196,7 +201,21 @@ const Home = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLikedProducts(prev => 
+                            prev.includes(product.id) 
+                              ? prev.filter(id => id !== product.id)
+                              : [...prev, product.id]
+                          );
+                        }}
+                      >
+                        <Heart className={`h-4 w-4 ${likedProducts.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+                      </Button>
                       <span className="text-sm text-muted-foreground">24</span>
                     </div>
                     <Button

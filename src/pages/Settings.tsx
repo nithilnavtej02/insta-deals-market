@@ -2,30 +2,48 @@ import { ArrowLeft, Bell, Shield, Globe, Moon, Eye, Lock, Smartphone, Mail } fro
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useTheme } from "@/context/ThemeContext";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { darkMode, toggleDarkMode, language, setLanguage, t } = useTheme();
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false);
   const [settings, setSettings] = useState({
     emailNotifications: true,
     phoneNotifications: false,
     showActivityStatus: true,
     anonymousMode: false,
-    darkMode: false,
     pushNotifications: true
   });
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'es', name: 'Español' },
+    { code: 'fr', name: 'Français' },
+    { code: 'de', name: 'Deutsch' },
+    { code: 'it', name: 'Italiano' },
+    { code: 'pt', name: 'Português' },
+    { code: 'ru', name: 'Русский' },
+    { code: 'zh', name: '中文' },
+    { code: 'ja', name: '日本語' },
+    { code: 'ko', name: '한국어' }
+  ];
 
   const updateSetting = (key: string, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const currentLanguageName = languages.find(lang => lang.code === language)?.name || 'English';
+
   const settingsGroups = [
     {
-      title: "Account",
+      title: t("Account"),
       items: [
-        { label: "Email Notifications", icon: Mail, type: "switch", enabled: settings.emailNotifications, key: "emailNotifications" },
-        { label: "Phone Notifications", icon: Smartphone, type: "switch", enabled: settings.phoneNotifications, key: "phoneNotifications" },
+        { label: t("Email Notifications"), icon: Mail, type: "switch", enabled: settings.emailNotifications, key: "emailNotifications" },
+        { label: t("Phone Notifications"), icon: Smartphone, type: "switch", enabled: settings.phoneNotifications, key: "phoneNotifications" },
         { label: "Two-Factor Authentication", icon: Lock, type: "link" },
       ]
     },
@@ -40,8 +58,8 @@ const Settings = () => {
     {
       title: "Preferences",
       items: [
-        { label: "Dark Mode", icon: Moon, type: "switch", enabled: settings.darkMode, key: "darkMode" },
-        { label: "Language", icon: Globe, type: "link", value: "English" },
+        { label: t("Dark Mode"), icon: Moon, type: "switch", enabled: darkMode, key: "darkMode", action: toggleDarkMode },
+        { label: t("Language"), icon: Globe, type: "link", value: currentLanguageName, action: () => setShowLanguageDialog(true) },
         { label: "Push Notifications", icon: Bell, type: "switch", enabled: settings.pushNotifications, key: "pushNotifications" },
       ]
     }
@@ -55,7 +73,7 @@ const Settings = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold">Settings</h1>
+          <h1 className="text-xl font-semibold">{t("Settings")}</h1>
         </div>
       </div>
 
@@ -81,12 +99,21 @@ const Settings = () => {
                       {item.type === "switch" && (
                         <Switch 
                           checked={item.enabled} 
-                          onCheckedChange={(checked) => item.key && updateSetting(item.key, checked)}
+                          onCheckedChange={(checked) => {
+                            if (item.action) {
+                              item.action();
+                            } else if (item.key) {
+                              updateSetting(item.key, checked);
+                            }
+                          }}
                         />
                       )}
                       
                       {item.type === "link" && (
-                        <div className="flex items-center gap-2">
+                        <div 
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={item.action}
+                        >
                           {item.value && (
                             <span className="text-sm text-muted-foreground">{item.value}</span>
                           )}
@@ -112,6 +139,30 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Language Selection Dialog */}
+      <Dialog open={showLanguageDialog} onOpenChange={setShowLanguageDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Language")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {languages.map((lang) => (
+              <Button
+                key={lang.code}
+                variant={language === lang.code ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => {
+                  setLanguage(lang.code as any);
+                  setShowLanguageDialog(false);
+                }}
+              >
+                {lang.name}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

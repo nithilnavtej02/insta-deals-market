@@ -16,6 +16,21 @@ const Profile = () => {
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  
+  const followers = [
+    { id: 1, username: "@techie_sam", name: "Sam Wilson", avatar: "/api/placeholder/40/40", isFollowing: true },
+    { id: 2, username: "@gadget_guru", name: "Alex Chen", avatar: "/api/placeholder/40/40", isFollowing: false },
+    { id: 3, username: "@phone_dealer", name: "Mike Ross", avatar: "/api/placeholder/40/40", isFollowing: true },
+    { id: 4, username: "@apple_fan", name: "Sarah Jones", avatar: "/api/placeholder/40/40", isFollowing: false },
+  ];
+  
+  const following = [
+    { id: 5, username: "@luxury_seller", name: "Emma Davis", avatar: "/api/placeholder/40/40", isFollowing: true },
+    { id: 6, username: "@vintage_store", name: "John Smith", avatar: "/api/placeholder/40/40", isFollowing: true },
+    { id: 7, username: "@fashion_hub", name: "Lisa Wong", avatar: "/api/placeholder/40/40", isFollowing: true },
+  ];
   const recentActivity = [
     {
       id: 1,
@@ -186,7 +201,7 @@ const Profile = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-6 text-center">
+        <div className="grid grid-cols-5 gap-4 text-center">
           <div className="cursor-pointer" onClick={() => navigate('/my-listings')}>
             <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
             <p className="text-2xl font-bold">24</p>
@@ -201,6 +216,16 @@ const Profile = () => {
             <MessageCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
             <p className="text-2xl font-bold">156</p>
             <p className="text-sm text-muted-foreground">Reviews</p>
+          </div>
+          <div className="cursor-pointer" onClick={() => setShowFollowers(true)}>
+            <Heart className="h-6 w-6 mx-auto mb-2 text-primary" />
+            <p className="text-2xl font-bold">1.2K</p>
+            <p className="text-sm text-muted-foreground">Followers</p>
+          </div>
+          <div className="cursor-pointer" onClick={() => setShowFollowing(true)}>
+            <MessageCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
+            <p className="text-2xl font-bold">345</p>
+            <p className="text-sm text-muted-foreground">Following</p>
           </div>
         </div>
       </div>
@@ -288,6 +313,86 @@ const Profile = () => {
           Log Out
         </Button>
       </div>
+
+      {/* Followers Dialog */}
+      <Dialog open={showFollowers} onOpenChange={setShowFollowers}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Followers (1.2K)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {followers.map((user) => (
+              <div key={user.id} className="flex items-center gap-3">
+                <Avatar 
+                  className="w-10 h-10 cursor-pointer"
+                  onClick={() => {
+                    setShowFollowers(false);
+                    navigate(`/seller/${user.username.slice(1)}`);
+                  }}
+                >
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback>{user.username.slice(1, 3).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div 
+                  className="flex-1 cursor-pointer"
+                  onClick={() => {
+                    setShowFollowers(false);
+                    navigate(`/seller/${user.username.slice(1)}`);
+                  }}
+                >
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.username}</p>
+                </div>
+                <Button 
+                  variant={user.isFollowing ? "outline" : "default"} 
+                  size="sm"
+                  className="h-8"
+                >
+                  {user.isFollowing ? "Following" : "Follow"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Following Dialog */}
+      <Dialog open={showFollowing} onOpenChange={setShowFollowing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Following (345)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {following.map((user) => (
+              <div key={user.id} className="flex items-center gap-3">
+                <Avatar 
+                  className="w-10 h-10 cursor-pointer"
+                  onClick={() => {
+                    setShowFollowing(false);
+                    navigate(`/seller/${user.username.slice(1)}`);
+                  }}
+                >
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback>{user.username.slice(1, 3).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div 
+                  className="flex-1 cursor-pointer"
+                  onClick={() => {
+                    setShowFollowing(false);
+                    navigate(`/seller/${user.username.slice(1)}`);
+                  }}
+                >
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.username}</p>
+                </div>
+                <Button variant="outline" size="sm" className="h-8">
+                  Following
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <div className="text-center text-muted-foreground mb-6">

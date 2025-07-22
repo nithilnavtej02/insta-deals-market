@@ -3,23 +3,35 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const PrivacySecurity = () => {
   const navigate = useNavigate();
+  const [settings, setSettings] = useState({
+    twoFactor: true,
+    loginAlerts: true,
+    onlineStatus: false,
+    usageAnalytics: true,
+    personalizedAds: false
+  });
+
+  const updateSetting = (key: string, value: boolean) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
 
   const privacySettings = [
     {
       title: "Account Security",
       items: [
-        { label: "Two-Factor Authentication", icon: Key, type: "switch", enabled: true },
-        { label: "Login Alerts", icon: Bell, type: "switch", enabled: true },
+        { label: "Two-Factor Authentication", icon: Key, type: "switch", enabled: settings.twoFactor, key: "twoFactor" },
+        { label: "Login Alerts", icon: Bell, type: "switch", enabled: settings.loginAlerts, key: "loginAlerts" },
         { label: "Device Management", icon: Smartphone, type: "link" },
       ]
     },
     {
       title: "Privacy Controls",
       items: [
-        { label: "Show Online Status", icon: Eye, type: "switch", enabled: false },
+        { label: "Show Online Status", icon: Eye, type: "switch", enabled: settings.onlineStatus, key: "onlineStatus" },
         { label: "Profile Visibility", icon: Shield, type: "link", value: "Public" },
         { label: "Contact Information", icon: Lock, type: "link", value: "Friends Only" },
       ]
@@ -27,8 +39,8 @@ const PrivacySecurity = () => {
     {
       title: "Data & Analytics",
       items: [
-        { label: "Usage Analytics", icon: Eye, type: "switch", enabled: true },
-        { label: "Personalized Ads", icon: Bell, type: "switch", enabled: false },
+        { label: "Usage Analytics", icon: Eye, type: "switch", enabled: settings.usageAnalytics, key: "usageAnalytics" },
+        { label: "Personalized Ads", icon: Bell, type: "switch", enabled: settings.personalizedAds, key: "personalizedAds" },
         { label: "Data Download", icon: Shield, type: "link" },
       ]
     }
@@ -66,7 +78,10 @@ const PrivacySecurity = () => {
                       <span className="flex-1 font-medium">{item.label}</span>
                       
                       {item.type === "switch" && (
-                        <Switch checked={item.enabled} />
+                        <Switch 
+                          checked={item.enabled} 
+                          onCheckedChange={(checked) => item.key && updateSetting(item.key, checked)}
+                        />
                       )}
                       
                       {item.type === "link" && (

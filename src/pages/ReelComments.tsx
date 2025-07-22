@@ -10,6 +10,8 @@ const ReelComments = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [newComment, setNewComment] = useState("");
+  const [likedComments, setLikedComments] = useState<number[]>([]);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
 
   const comments = [
     {
@@ -87,7 +89,12 @@ const ReelComments = () => {
             
             <div className="flex-1 min-w-0">
               <div className="bg-muted rounded-lg p-3">
-                <p className="font-medium text-sm text-primary mb-1">{comment.user}</p>
+                <p 
+                  className="font-medium text-sm text-primary mb-1 cursor-pointer hover:underline"
+                  onClick={() => navigate(`/seller/${comment.user.slice(1)}`)}
+                >
+                  {comment.user}
+                </p>
                 <p className="text-sm">{comment.comment}</p>
               </div>
               
@@ -97,18 +104,48 @@ const ReelComments = () => {
                   variant="ghost" 
                   size="sm" 
                   className="h-auto p-0 text-xs hover:bg-transparent"
+                  onClick={() => {
+                    setLikedComments(prev => 
+                      prev.includes(comment.id) 
+                        ? prev.filter(id => id !== comment.id)
+                        : [...prev, comment.id]
+                    );
+                  }}
                 >
-                  <Heart className={cn("h-3 w-3 mr-1", comment.isLiked && "fill-red-500 text-red-500")} />
-                  {comment.likes}
+                  <Heart className={cn("h-3 w-3 mr-1", 
+                    (comment.isLiked || likedComments.includes(comment.id)) && "fill-red-500 text-red-500"
+                  )} />
+                  {comment.likes + (likedComments.includes(comment.id) ? 1 : 0)}
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   className="h-auto p-0 text-xs hover:bg-transparent"
+                  onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                 >
                   Reply
                 </Button>
               </div>
+              
+              {/* Reply Input */}
+              {replyingTo === comment.id && (
+                <div className="mt-3 ml-8">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder={`Reply to ${comment.user}...`}
+                      className="text-sm"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          setReplyingTo(null);
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={() => setReplyingTo(null)}>
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
