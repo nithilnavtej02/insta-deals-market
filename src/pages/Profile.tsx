@@ -55,7 +55,19 @@ const Profile = () => {
       <div className="bg-white px-4 py-6">
         {/* Profile Info */}
         <div className="flex items-start gap-4 mb-6">
-          <Avatar className="w-16 h-16">
+          <Avatar 
+            className="w-16 h-16 cursor-pointer"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = () => {
+                // Handle image upload here
+                console.log('Image selected:', input.files?.[0]);
+              };
+              input.click();
+            }}
+          >
             <AvatarImage src="/src/assets/profile-pic.jpg" />
             <AvatarFallback className="bg-primary text-white text-xl">SU</AvatarFallback>
           </Avatar>

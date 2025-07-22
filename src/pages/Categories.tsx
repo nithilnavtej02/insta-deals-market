@@ -52,6 +52,7 @@ const Categories = () => {
             <div
               key={category.name}
               className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/category/${category.name.toLowerCase().replace(' & ', '-').replace(' ', '-')}`)}
             >
               <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mb-3 mx-auto`}>
                 <span className="text-2xl">{category.icon}</span>

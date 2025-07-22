@@ -150,12 +150,17 @@ const Reels = () => {
       </div>
 
       {/* Reels Container - Scrollable */}
-      <div className="relative overflow-y-auto">
-        {reels.map((reel, index) => (
-          <div
-            key={reel.id}
-            className="relative w-full h-[75vh] mx-3 my-2 rounded-[20px] overflow-hidden bg-gray-800"
-          >
+      <div 
+        className="relative overflow-y-auto lg:flex lg:justify-center snap-y snap-mandatory"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        <div className="lg:w-96 lg:mx-auto">
+          {reels.map((reel, index) => (
+            <div
+              key={reel.id}
+              className="relative w-full h-[75vh] mx-3 my-2 rounded-[20px] overflow-hidden bg-gray-800 snap-start"
+              style={{ scrollSnapAlign: 'start' }}
+            >
             {/* Background Image */}
             {reel.image ? (
               <img
@@ -182,15 +187,18 @@ const Reels = () => {
 
             {/* Buy Button */}
             <Button
-              className="absolute top-5 right-5 bg-blue-600/95 hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-[20px] flex items-center gap-1.5 shadow-lg"
-              onClick={() => navigate(`/product/${reel.id}`)}
+              className="absolute top-5 right-5 bg-blue-600/95 backdrop-blur-sm hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-[20px] flex items-center gap-1.5 shadow-lg border-0"
+              onClick={() => {
+                // Redirect to external link for buying
+                window.open('https://example.com/buy', '_blank');
+              }}
             >
               <ShoppingBag className="h-3.5 w-3.5" />
               Buy
             </Button>
 
             {/* Content - Bottom Left with subtle background */}
-            <div className="absolute bottom-5 left-5 right-24 bg-black/30 backdrop-blur-sm rounded-lg p-3">
+            <div className="absolute bottom-5 left-5 right-24 bg-black/20 backdrop-blur-md rounded-lg p-3 border border-white/10">
               <h3 className="text-white text-lg font-bold mb-1.5">{reel.title}</h3>
               <p className="text-white/90 text-sm mb-2.5 line-clamp-2 leading-5">{reel.description}</p>
               <div className="flex items-center justify-between">
@@ -259,8 +267,9 @@ const Reels = () => {
                 <Bookmark className={`h-6 w-6 text-white ${reelStates[index]?.isSaved ? 'fill-white' : ''}`} />
               </Button>
             </div>
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       <BottomNavigation />

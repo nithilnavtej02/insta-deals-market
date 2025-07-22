@@ -4,11 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
+import CallDialog from "@/components/CallDialog";
 
 const Chat = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [message, setMessage] = useState("");
+  const [showCallDialog, setShowCallDialog] = useState(false);
+  const [callType, setCallType] = useState<"voice" | "video">("voice");
 
   const chatData: Record<string, { name: string; username: string; isOnline: boolean }> = {
     "1": { name: "iPhone 14 Pro", username: "@techseller_NY", isOnline: true },
@@ -43,8 +46,26 @@ const Chat = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon"><Video className="h-5 w-5" /></Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => {
+                setCallType("voice");
+                setShowCallDialog(true);
+              }}
+            >
+              <Phone className="h-5 w-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => {
+                setCallType("video");
+                setShowCallDialog(true);
+              }}
+            >
+              <Video className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -63,6 +84,18 @@ const Chat = () => {
           <Button onClick={() => setMessage("")}><Send className="h-4 w-4" /></Button>
         </div>
       </div>
+      
+      {chat && (
+        <CallDialog
+          isOpen={showCallDialog}
+          onClose={() => setShowCallDialog(false)}
+          type={callType}
+          contact={{
+            name: chat.name,
+            username: chat.username
+          }}
+        />
+      )}
     </div>
   );
 };

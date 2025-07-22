@@ -25,6 +25,8 @@ import Favorites from "./pages/Favorites";
 import Reviews from "./pages/Reviews";
 import PrivacySecurity from "./pages/PrivacySecurity";
 import Location from "./pages/Location";
+import CategoryProducts from "./pages/CategoryProducts";
+import AdminReels from "./pages/AdminReels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,9 @@ const App = () => (
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/privacy-security" element={<PrivacySecurity />} />
           <Route path="/location" element={<Location />} />
+          <Route path="/category/:category" element={<CategoryProducts />} />
+          <Route path="/admin/reels" element={<AdminReels />} />
+          <Route path="/seller/:username" element={<SellerProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
