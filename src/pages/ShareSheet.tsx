@@ -7,7 +7,7 @@ const ShareSheet = () => {
 
   const shareOptions = [
     { name: "WhatsApp", icon: "💬", color: "bg-green-500", action: () => shareToWhatsApp() },
-    { name: "Instagram Story", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500", action: () => shareToInstagram() },
+    { name: "Instagram", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500", action: () => shareToInstagram() },
     { name: "TikTok", icon: "🎵", color: "bg-black", action: () => shareToTikTok() },
     { name: "X (Twitter)", icon: "🐦", color: "bg-black", action: () => shareToX() },
     { name: "LinkedIn", icon: "💼", color: "bg-blue-600", action: () => shareToLinkedIn() },
@@ -59,10 +59,10 @@ const ShareSheet = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-white rounded-t-3xl w-full max-h-[70vh] overflow-y-auto">
+      <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[70vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Share to</h2>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Share to</h2>
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <X className="h-5 w-5" />
           </Button>
@@ -80,14 +80,14 @@ const ShareSheet = () => {
                 <div className={`w-12 h-12 rounded-full ${option.color} flex items-center justify-center text-white text-xl`}>
                   {option.icon}
                 </div>
-                <span className="text-xs font-medium text-center">{option.name}</span>
+                <span className="text-xs font-medium text-center text-foreground">{option.name}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Additional Actions */}
-        <div className="border-t p-4 space-y-3">
+        <div className="border-t border-border p-4 space-y-3">
           <Button 
             variant="outline" 
             className="w-full justify-start"

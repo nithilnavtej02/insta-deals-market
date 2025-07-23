@@ -151,16 +151,17 @@ const Reels = () => {
 
       {/* Reels Container - Scrollable */}
       <div 
-        className="relative overflow-y-auto lg:flex lg:justify-center snap-y snap-mandatory"
+        className="relative overflow-y-auto snap-y snap-mandatory"
         style={{ scrollBehavior: 'smooth' }}
       >
-        <div className="lg:w-96 lg:mx-auto">
-          {reels.map((reel, index) => (
-            <div
-              key={reel.id}
-              className="relative w-full h-[75vh] mx-3 my-2 rounded-[20px] overflow-hidden bg-gray-800 snap-start"
-              style={{ scrollSnapAlign: 'start' }}
-            >
+        <div className="flex justify-center">
+          <div className="w-full max-w-sm mx-auto">
+            {reels.map((reel, index) => (
+              <div
+                key={reel.id}
+                className="relative w-full h-[75vh] mx-3 my-2 rounded-[20px] overflow-hidden bg-gray-800 snap-start"
+                style={{ scrollSnapAlign: 'start' }}
+              >
             {/* Background Image */}
             {reel.image ? (
               <img
@@ -202,7 +203,12 @@ const Reels = () => {
               <h3 className="text-white text-lg font-bold mb-1.5">{reel.title}</h3>
               <p className="text-white/90 text-sm mb-2.5 line-clamp-2 leading-5">{reel.description}</p>
               <div className="flex items-center justify-between">
-                <span className="text-blue-400 text-sm font-medium">{reel.seller}</span>
+                <span 
+                  className="text-blue-400 text-sm font-medium cursor-pointer hover:text-blue-300"
+                  onClick={() => navigate(`/seller/${reel.id}`)}
+                >
+                  {reel.seller}
+                </span>
                 <span className="text-white font-bold text-base">{reel.price}</span>
               </div>
             </div>
@@ -268,7 +274,8 @@ const Reels = () => {
               </Button>
             </div>
             </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 

@@ -29,7 +29,10 @@ const Settings = () => {
     { code: 'ru', name: 'Русский' },
     { code: 'zh', name: '中文' },
     { code: 'ja', name: '日本語' },
-    { code: 'ko', name: '한국어' }
+    { code: 'ko', name: '한국어' },
+    { code: 'hi', name: 'हिंदी' },
+    { code: 'te', name: 'తెలుగు' },
+    { code: 'ta', name: 'தமிழ்' }
   ];
 
   const updateSetting = (key: string, value: boolean) => {
@@ -68,12 +71,12 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
+      <div className="bg-background border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold">{t("Settings")}</h1>
+          <h1 className="text-xl font-semibold text-foreground">{t("Settings")}</h1>
         </div>
       </div>
 
@@ -81,7 +84,7 @@ const Settings = () => {
       <div className="p-4 space-y-6">
         {settingsGroups.map((group) => (
           <div key={group.title}>
-            <h2 className="text-lg font-semibold mb-3">{group.title}</h2>
+            <h2 className="text-lg font-semibold mb-3 text-foreground">{group.title}</h2>
             <Card>
               <CardContent className="p-0">
                 {group.items.map((item, index) => {
@@ -90,11 +93,11 @@ const Settings = () => {
                     <div
                       key={item.label}
                       className={`flex items-center gap-3 p-4 ${
-                        index !== group.items.length - 1 ? "border-b" : ""
+                        index !== group.items.length - 1 ? "border-b border-border" : ""
                       }`}
                     >
                       <Icon className="h-5 w-5 text-primary" />
-                      <span className="flex-1 font-medium">{item.label}</span>
+                      <span className="flex-1 font-medium text-foreground">{item.label}</span>
                       
                       {item.type === "switch" && (
                         <Switch 
