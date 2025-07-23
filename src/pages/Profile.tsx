@@ -160,14 +160,12 @@ const Profile = () => {
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   <span>Edit Profile</span>
-                  <div className="ml-auto text-xs text-muted-foreground">1.2K followers</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowEditName(true)}>
                 <div className="flex items-center gap-2">
                   <Edit className="h-4 w-4" />
                   <span>Edit Name</span>
-                  <div className="ml-auto text-xs text-muted-foreground">345 following</div>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -218,8 +216,32 @@ const Profile = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Followers and Following Buttons */}
+        <div className="flex gap-3 mb-6">
+          <Button 
+            variant="outline" 
+            className="flex-1 h-12"
+            onClick={() => setShowFollowers(true)}
+          >
+            <div className="text-center">
+              <p className="text-lg font-bold">1.2K</p>
+              <p className="text-xs text-muted-foreground">Followers</p>
+            </div>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex-1 h-12"
+            onClick={() => setShowFollowing(true)}
+          >
+            <div className="text-center">
+              <p className="text-lg font-bold">345</p>
+              <p className="text-xs text-muted-foreground">Following</p>
+            </div>
+          </Button>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-5 gap-4 text-center">
+        <div className="grid grid-cols-3 gap-4 text-center">
           <div className="cursor-pointer" onClick={() => navigate('/my-listings')}>
             <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
             <p className="text-2xl font-bold">24</p>
@@ -234,16 +256,6 @@ const Profile = () => {
             <MessageCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
             <p className="text-2xl font-bold">156</p>
             <p className="text-sm text-muted-foreground">Reviews</p>
-          </div>
-          <div className="cursor-pointer" onClick={() => setShowFollowers(true)}>
-            <Heart className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">1.2K</p>
-            <p className="text-sm text-muted-foreground">Followers</p>
-          </div>
-          <div className="cursor-pointer" onClick={() => setShowFollowing(true)}>
-            <MessageCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">345</p>
-            <p className="text-sm text-muted-foreground">Following</p>
           </div>
         </div>
       </div>

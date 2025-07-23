@@ -28,7 +28,7 @@ const Categories = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
+      <div className="bg-background px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -51,7 +51,7 @@ const Categories = () => {
           {allCategories.map((category) => (
             <div
               key={category.name}
-              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-card rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(`/category/${category.name.toLowerCase().replace(' & ', '-').replace(' ', '-')}`)}
             >
               <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mb-3 mx-auto`}>

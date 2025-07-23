@@ -63,6 +63,36 @@ const CategoryProducts = () => {
         condition: "Vintage",
         description: "Classic 80s leather jacket in excellent condition"
       }
+    ],
+    "home-&-garden": [
+      {
+        id: 5,
+        title: "Garden Chair Set",
+        price: "$299",
+        originalPrice: "$450",
+        image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png",
+        seller: "@homedecor",
+        rating: 4.5,
+        reviews: 45,
+        location: "Seattle",
+        condition: "Good",
+        description: "Beautiful outdoor furniture set for garden"
+      }
+    ],
+    sports: [
+      {
+        id: 6,
+        title: "Tennis Racket",
+        price: "$85",
+        originalPrice: "$150",
+        image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png",
+        seller: "@sportsgear",
+        rating: 4.4,
+        reviews: 32,
+        location: "Miami",
+        condition: "Good",
+        description: "Professional tennis racket in great condition"
+      }
     ]
   };
 
@@ -72,7 +102,7 @@ const CategoryProducts = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
+      <div className="bg-background px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -87,7 +117,7 @@ const CategoryProducts = () => {
           {categoryProducts.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(`/product/${product.id}`)}
             >
               <div className="relative">
@@ -99,7 +129,7 @@ const CategoryProducts = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                  className="absolute top-2 right-2 bg-background/80 hover:bg-background"
                 >
                   <Heart className="h-4 w-4" />
                 </Button>
