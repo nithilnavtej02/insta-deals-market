@@ -39,12 +39,28 @@ const Favorites = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="flex items-center gap-3">
+      <div className="bg-background border-b px-4 py-3">
+        <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-semibold">Favorites</h1>
+        </div>
+        
+        {/* Toggle between Favorites and Saved */}
+        <div className="flex bg-muted p-1 rounded-lg">
+          <button 
+            className="flex-1 px-3 py-2 text-sm font-medium rounded-md bg-background text-foreground"
+            onClick={() => {}}
+          >
+            Favorites
+          </button>
+          <button 
+            className="flex-1 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground"
+            onClick={() => navigate('/saved')}
+          >
+            Saved
+          </button>
         </div>
       </div>
 

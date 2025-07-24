@@ -49,7 +49,7 @@ const PrivacySecurity = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
+      <div className="bg-background px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -101,15 +101,67 @@ const PrivacySecurity = () => {
         ))}
       </div>
 
+      {/* Privacy Policy & Terms */}
+      <div className="p-4">
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3 text-foreground">Privacy Policy & Terms</h3>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-foreground mb-2">Data Collection</h4>
+                <p>We collect information to provide better services to our users. This includes basic account information, usage data, and communication preferences.</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-foreground mb-2">Information Sharing</h4>
+                <p>We do not sell personal information to third parties. We may share anonymized data for analytics and improvement purposes only with your consent.</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-foreground mb-2">Data Retention</h4>
+                <p>Your data is retained as long as your account is active. You can request data deletion at any time by contacting our support team.</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-foreground mb-2">Security Measures</h4>
+                <p>We use industry-standard encryption and security measures to protect your data. All payments are processed securely through trusted payment providers.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Data Requests */}
+      <div className="p-4">
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3 text-foreground">Data Requests</h3>
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-foreground"
+                onClick={() => alert("Data download request submitted. You'll receive an email with your data within 7 days.")}
+              >
+                Download My Data
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => alert("Account deletion request submitted. Please contact support to complete this process.")}
+              >
+                Delete My Account
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Security Tips */}
       <div className="p-4">
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-muted/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-3">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <h3 className="font-semibold text-blue-900">Security Tips</h3>
+              <Shield className="h-6 w-6 text-primary" />
+              <h3 className="font-semibold">Security Tips</h3>
             </div>
-            <ul className="text-sm text-blue-800 space-y-1">
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Use a strong, unique password</li>
               <li>• Enable two-factor authentication</li>
               <li>• Keep your app updated</li>

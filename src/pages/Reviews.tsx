@@ -90,7 +90,11 @@ const Reviews = () => {
       {/* Reviews List */}
       <div className="p-4 space-y-4">
         {reviews.map((review) => (
-          <Card key={review.id}>
+          <Card 
+            key={review.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/product/${review.id}`)}
+          >
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Avatar className="w-10 h-10">
@@ -119,9 +123,22 @@ const Reviews = () => {
                     </div>
                   </div>
                   <p className="text-sm mb-2">{review.comment}</p>
-                  <p className="text-xs text-primary mb-3">Product: {review.product}</p>
+                  <p 
+                    className="text-xs text-primary mb-3 cursor-pointer hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/product/${review.id}`);
+                    }}
+                  >
+                    Product: {review.product}
+                  </p>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="h-7 px-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <ThumbsUp className="h-3 w-3 mr-1" />
                       Helpful ({review.helpful})
                     </Button>

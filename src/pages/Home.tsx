@@ -160,7 +160,7 @@ const Home = () => {
             <div 
               key={category.name} 
               className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate(`/categories/${category.name.toLowerCase()}`)}
+              onClick={() => navigate(`/category/${category.name.toLowerCase().replace(' & ', '-').replace(' ', '-')}`)}
             >
               <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mb-2`}>
                 <span className="text-2xl">{category.icon}</span>

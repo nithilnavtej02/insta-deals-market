@@ -134,7 +134,11 @@ const Search = () => {
             />
           </div>
           
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate('/filters')}
+          >
             <Filter className="h-5 w-5" />
           </Button>
         </div>

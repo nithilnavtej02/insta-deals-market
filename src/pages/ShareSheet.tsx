@@ -23,12 +23,15 @@ const ShareSheet = () => {
   };
 
   const shareToInstagram = () => {
-    // Note: Instagram doesn't support direct web sharing, this would typically open the app
-    alert("Opening Instagram app...");
+    const text = "Check out this amazing product on ReOwn!";
+    const url = `https://www.instagram.com/?url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
   };
 
   const shareToTikTok = () => {
-    alert("Opening TikTok app...");
+    const text = "Check out this amazing product on ReOwn!";
+    const url = `https://www.tiktok.com/share?url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
   };
 
   const shareToX = () => {
@@ -44,7 +47,9 @@ const ShareSheet = () => {
   };
 
   const shareToSnapchat = () => {
-    alert("Opening Snapchat app...");
+    const text = "Check out this amazing product on ReOwn!";
+    const url = `https://www.snapchat.com/share?url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
   };
 
   const shareToFacebook = () => {

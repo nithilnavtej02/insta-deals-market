@@ -242,16 +242,42 @@ const Sell = () => {
 
           <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="location"
-                type="text"
-                placeholder="City, State"
-                value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="location"
+                  type="text"
+                  placeholder="City, State"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange("location", e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        const { latitude, longitude } = position.coords;
+                        // In a real app, you'd use a geocoding service to convert coordinates to address
+                        setFormData({...formData, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`});
+                        alert("Current location added!");
+                      },
+                      (error) => {
+                        alert("Unable to retrieve location. Please enter manually.");
+                      }
+                    );
+                  } else {
+                    alert("Geolocation is not supported by this browser.");
+                  }
+                }}
+                className="px-3"
+              >
+                📍
+              </Button>
             </div>
           </div>
         </div>
