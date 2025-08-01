@@ -116,7 +116,7 @@ const Auth = () => {
             </Button>
 
             <div className="text-center">
-              <Button variant="link" onClick={() => setIsOtpStep(false)}>
+              <Button variant="link" onClick={() => navigate('/forgot-password')}>
                 Didn't receive code? Resend
               </Button>
             </div>

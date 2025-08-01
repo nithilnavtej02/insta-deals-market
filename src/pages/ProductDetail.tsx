@@ -6,11 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate, useParams } from "react-router-dom";
+import CallDialog from "@/components/CallDialog";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLiked, setIsLiked] = useState(false);
+  const [showCallDialog, setShowCallDialog] = useState(false);
+  const [callType, setCallType] = useState<"voice" | "video">("voice");
 
   // Dummy product data - different products based on id
   const products = {
@@ -116,6 +119,11 @@ const ProductDetail = () => {
   };
 
   const product = products[id as keyof typeof products] || products["1"];
+
+  const handleCall = (type: "voice" | "video") => {
+    setCallType(type);
+    setShowCallDialog(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -287,6 +295,7 @@ const ProductDetail = () => {
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
+                onClick={() => handleCall("voice")}
               >
                 <Phone className="h-4 w-4" />
                 Call
@@ -294,6 +303,7 @@ const ProductDetail = () => {
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
+                onClick={() => handleCall("video")}
               >
                 <Video className="h-4 w-4" />
                 Video
@@ -322,14 +332,25 @@ const ProductDetail = () => {
       {/* Bottom Actions */}
       <div className="sticky bottom-0 bg-background border-t p-4">
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" size="lg">
+          <Button variant="outline" size="lg" onClick={() => navigate('/cart')}>
             Add to Cart
           </Button>
-          <Button size="lg">
+          <Button size="lg" onClick={() => navigate('/checkout')}>
             Buy Now
           </Button>
         </div>
       </div>
+
+      {/* Call Dialog */}
+      <CallDialog
+        isOpen={showCallDialog}
+        onClose={() => setShowCallDialog(false)}
+        type={callType}
+        contact={{
+          name: product.seller.name,
+          username: product.seller.username
+        }}
+      />
     </div>
   );
 };

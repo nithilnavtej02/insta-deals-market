@@ -1,11 +1,15 @@
-import { ArrowLeft, Edit, Eye, Heart, MessageCircle, Plus } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Edit, Eye, Heart, MessageCircle, Plus, Calendar, User, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
 const MyListings = () => {
   const navigate = useNavigate();
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<any>(null);
 
   const listings = [
     {
@@ -17,7 +21,9 @@ const MyListings = () => {
       likes: 23,
       messages: 8,
       image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png",
-      postedDate: "2 days ago"
+      postedDate: "2 days ago",
+      soldTo: null,
+      soldDate: null
     },
     {
       id: 2,
@@ -28,7 +34,15 @@ const MyListings = () => {
       likes: 15,
       messages: 12,
       image: "/lovable-uploads/7ca162be-1e79-409e-bfbf-704e1e3a247a.png",
-      postedDate: "1 week ago"
+      postedDate: "1 week ago",
+      soldTo: {
+        name: "John Doe",
+        username: "@johndoe",
+        phone: "+91 98765 43210",
+        email: "john@example.com"
+      },
+      soldDate: "3 days ago",
+      soldPrice: "$1,200"
     },
     {
       id: 3,
@@ -39,9 +53,16 @@ const MyListings = () => {
       likes: 9,
       messages: 3,
       image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png",
-      postedDate: "3 days ago"
+      postedDate: "3 days ago",
+      soldTo: null,
+      soldDate: null
     }
   ];
+
+  const handleStatusClick = (listing: any) => {
+    setSelectedListing(listing);
+    setShowStatusDialog(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,9 +85,9 @@ const MyListings = () => {
       {/* Listings */}
       <div className="p-4 space-y-4">
         {listings.map((listing) => (
-          <Card key={listing.id} className="overflow-hidden">
+          <Card key={listing.id} className="overflow-hidden cursor-pointer">
             <CardContent className="p-0">
-              <div className="flex">
+              <div className="flex" onClick={() => navigate(`/product/${listing.id}`)}>
                 <img
                   src={listing.image}
                   alt={listing.title}
@@ -77,6 +98,11 @@ const MyListings = () => {
                     <h3 className="font-semibold">{listing.title}</h3>
                     <Badge 
                       variant={listing.status === "sold" ? "secondary" : "default"}
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusClick(listing);
+                      }}
                     >
                       {listing.status}
                     </Badge>
@@ -98,7 +124,14 @@ const MyListings = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{listing.postedDate}</span>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/sell?edit=${listing.id}`);
+                      }}
+                    >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
@@ -109,6 +142,73 @@ const MyListings = () => {
           </Card>
         ))}
       </div>
+
+      {/* Status Details Dialog */}
+      <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Badge variant={selectedListing?.status === "sold" ? "secondary" : "default"}>
+                {selectedListing?.status}
+              </Badge>
+              {selectedListing?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedListing?.status === "sold" && selectedListing.soldTo ? (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{selectedListing.soldTo.name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedListing.soldTo.username}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Sold for {selectedListing.soldPrice}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Sold on {selectedListing.soldDate}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-3">
+                    <p className="text-sm font-medium mb-2">Buyer Contact:</p>
+                    <p className="text-sm text-muted-foreground">Phone: {selectedListing.soldTo.phone}</p>
+                    <p className="text-sm text-muted-foreground">Email: {selectedListing.soldTo.email}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">This item is currently active and available for sale.</p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span>Views:</span>
+                    <span>{selectedListing?.views}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Likes:</span>
+                    <span>{selectedListing?.likes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Messages:</span>
+                    <span>{selectedListing?.messages}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
