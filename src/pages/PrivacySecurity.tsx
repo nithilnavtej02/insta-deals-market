@@ -23,7 +23,6 @@ const PrivacySecurity = () => {
     {
       title: "Account Security",
       items: [
-        { label: "Two-Factor Authentication", icon: Key, type: "switch", enabled: settings.twoFactor, key: "twoFactor" },
         { label: "Login Alerts", icon: Bell, type: "switch", enabled: settings.loginAlerts, key: "loginAlerts" },
         { label: "Device Management", icon: Smartphone, type: "link" },
       ]
@@ -32,15 +31,11 @@ const PrivacySecurity = () => {
       title: "Privacy Controls",
       items: [
         { label: "Show Online Status", icon: Eye, type: "switch", enabled: settings.onlineStatus, key: "onlineStatus" },
-        { label: "Profile Visibility", icon: Shield, type: "link", value: "Public" },
-        { label: "Contact Information", icon: Lock, type: "link", value: "Friends Only" },
       ]
     },
     {
       title: "Data & Analytics",
       items: [
-        { label: "Usage Analytics", icon: Eye, type: "switch", enabled: settings.usageAnalytics, key: "usageAnalytics" },
-        { label: "Personalized Ads", icon: Bell, type: "switch", enabled: settings.personalizedAds, key: "personalizedAds" },
         { label: "Data Download", icon: Shield, type: "link" },
       ]
     }
@@ -86,9 +81,6 @@ const PrivacySecurity = () => {
                       
                       {item.type === "link" && (
                         <div className="flex items-center gap-2">
-                          {item.value && (
-                            <span className="text-sm text-muted-foreground">{item.value}</span>
-                          )}
                           <span className="text-muted-foreground">›</span>
                         </div>
                       )}

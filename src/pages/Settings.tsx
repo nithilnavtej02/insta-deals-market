@@ -47,15 +47,6 @@ const Settings = () => {
       items: [
         { label: t("Email Notifications"), icon: Mail, type: "switch", enabled: settings.emailNotifications, key: "emailNotifications" },
         { label: t("Phone Notifications"), icon: Smartphone, type: "switch", enabled: settings.phoneNotifications, key: "phoneNotifications" },
-        { label: "Two-Factor Authentication", icon: Lock, type: "link" },
-      ]
-    },
-    {
-      title: "Privacy",
-      items: [
-        { label: "Show Activity Status", icon: Eye, type: "switch", enabled: settings.showActivityStatus, key: "showActivityStatus" },
-        { label: "Anonymous Mode", icon: Shield, type: "switch", enabled: settings.anonymousMode, key: "anonymousMode" },
-        { label: "Privacy Policy", icon: Shield, type: "link" },
       ]
     },
     {
@@ -63,7 +54,6 @@ const Settings = () => {
       items: [
         { label: t("Dark Mode"), icon: Moon, type: "switch", enabled: darkMode, key: "darkMode", action: toggleDarkMode },
         { label: t("Language"), icon: Globe, type: "link", value: currentLanguageName, action: () => setShowLanguageDialog(true) },
-        { label: "Push Notifications", icon: Bell, type: "switch", enabled: settings.pushNotifications, key: "pushNotifications" },
       ]
     }
   ];
