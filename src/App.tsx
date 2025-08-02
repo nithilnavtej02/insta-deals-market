@@ -1,9 +1,10 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Suspense } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -30,47 +31,74 @@ import CategoryProducts from "./pages/CategoryProducts";
 import AdminReels from "./pages/AdminReels";
 import NotFound from "./pages/NotFound";
 import Saved from "./pages/Saved";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background font-sans antialiased">
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/create-account" element={<CreateAccount />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        
+        {/* Protected Routes */}
+        <Route path="/home" element={user ? <Home /> : <Navigate to="/auth" />} />
+        <Route path="/search" element={user ? <Search /> : <Navigate to="/auth" />} />
+        <Route path="/categories" element={user ? <Categories /> : <Navigate to="/auth" />} />
+        <Route path="/category/:id" element={user ? <CategoryProducts /> : <Navigate to="/auth" />} />
+        <Route path="/product/:id" element={user ? <ProductDetail /> : <Navigate to="/auth" />} />
+        <Route path="/sell" element={user ? <Sell /> : <Navigate to="/auth" />} />
+        <Route path="/reels" element={user ? <Reels /> : <Navigate to="/auth" />} />
+        <Route path="/reel/:id/comments" element={user ? <ReelComments /> : <Navigate to="/auth" />} />
+        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
+        <Route path="/profile/:id" element={user ? <SellerProfile /> : <Navigate to="/auth" />} />
+        <Route path="/my-listings" element={user ? <MyListings /> : <Navigate to="/auth" />} />
+        <Route path="/favorites" element={user ? <Favorites /> : <Navigate to="/auth" />} />
+        <Route path="/saved" element={user ? <Saved /> : <Navigate to="/auth" />} />
+        <Route path="/messages" element={user ? <Messages /> : <Navigate to="/auth" />} />
+        <Route path="/chat/:id" element={user ? <Chat /> : <Navigate to="/auth" />} />
+        <Route path="/notifications" element={user ? <Notifications /> : <Navigate to="/auth" />} />
+        <Route path="/settings" element={user ? <Settings /> : <Navigate to="/auth" />} />
+        <Route path="/privacy-security" element={user ? <PrivacySecurity /> : <Navigate to="/auth" />} />
+        <Route path="/location" element={user ? <Location /> : <Navigate to="/auth" />} />
+        <Route path="/reviews" element={user ? <Reviews /> : <Navigate to="/auth" />} />
+        <Route path="/admin/reels" element={user ? <AdminReels /> : <Navigate to="/auth" />} />
+        <Route path="/cart" element={user ? <Cart /> : <Navigate to="/auth" />} />
+        <Route path="/checkout" element={user ? <Checkout /> : <Navigate to="/auth" />} />
+        <Route path="/share" element={user ? <ShareSheet /> : <Navigate to="/auth" />} />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/create-account" element={<CreateAccount />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/reels" element={<Reels />} />
-          <Route path="/sell" element={<Sell />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/chat/:id" element={<Chat />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/reel/:id/comments" element={<ReelComments />} />
-          <Route path="/share" element={<ShareSheet />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/profile/:username" element={<SellerProfile />} />
-          <Route path="/my-listings" element={<MyListings />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/reviews" element={<Reviews />} />
-          <Route path="/privacy-security" element={<PrivacySecurity />} />
-          <Route path="/location" element={<Location />} />
-          <Route path="/category/:category" element={<CategoryProducts />} />
-          <Route path="/admin/reels" element={<AdminReels />} />
-          <Route path="/seller/:username" element={<SellerProfile />} />
-          <Route path="/saved" element={<Saved />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+        <Toaster />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

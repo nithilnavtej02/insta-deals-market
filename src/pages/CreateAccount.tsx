@@ -4,11 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const CreateAccount = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -21,9 +25,40 @@ const CreateAccount = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCreateAccount = () => {
-    // Validate form and create account
-    navigate("/auth");
+  const handleCreateAccount = async () => {
+    if (!formData.username || !formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await signUp(formData.email, formData.password, {
+        username: formData.username,
+        phone: formData.phone
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Account created! Please check your email to confirm your account.");
+        navigate("/auth");
+      }
+    } catch (error) {
+      toast.error("An error occurred during sign up");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -127,8 +162,9 @@ const CreateAccount = () => {
           size="lg"
           className="w-full"
           onClick={handleCreateAccount}
+          disabled={loading}
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </Button>
 
         <div className="text-center">

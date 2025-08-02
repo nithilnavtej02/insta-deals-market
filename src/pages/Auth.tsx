@@ -4,22 +4,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!isOtpStep) {
-      // Send OTP
-      setIsOtpStep(true);
+      if (!email || !password) {
+        toast.error("Please fill in all fields");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { data, error } = await signIn(email, password);
+        
+        if (error) {
+          if (error.message.includes('Email not confirmed')) {
+            setIsOtpStep(true);
+            toast.info("Please check your email for confirmation");
+          } else {
+            toast.error(error.message);
+          }
+        } else if (data.user) {
+          toast.success("Successfully signed in!");
+          navigate("/home");
+        }
+      } catch (error) {
+        toast.error("An error occurred during sign in");
+      } finally {
+        setLoading(false);
+      }
     } else {
-      // Verify OTP and login
-      navigate("/home");
+      // Handle OTP verification here if needed
+      toast.info("Please check your email and click the confirmation link");
     }
   };
 
@@ -81,8 +108,9 @@ const Auth = () => {
               size="lg"
               className="w-full"
               onClick={handleLogin}
+              disabled={loading}
             >
-              Send OTP
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
           </>
         ) : (
@@ -111,8 +139,9 @@ const Auth = () => {
               size="lg"
               className="w-full"
               onClick={handleLogin}
+              disabled={loading}
             >
-              Verify & Sign In
+              {loading ? "Verifying..." : "Verify & Sign In"}
             </Button>
 
             <div className="text-center">
