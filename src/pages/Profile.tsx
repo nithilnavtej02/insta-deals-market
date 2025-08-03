@@ -10,15 +10,87 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { profile, loading, updateProfile } = useProfile();
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [formData, setFormData] = useState({
+    bio: '',
+    location: '',
+    phone: '',
+    username: '',
+    display_name: ''
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        bio: profile.bio || '',
+        location: profile.location || '',
+        phone: profile.phone || '',
+        username: profile.username || '',
+        display_name: profile.display_name || ''
+      });
+    }
+  }, [profile]);
+
+  const handleUpdateProfile = async () => {
+    const { error } = await updateProfile(formData);
+    if (error) {
+      toast.error('Failed to update profile');
+    } else {
+      toast.success('Profile updated successfully');
+      setShowEditProfile(false);
+    }
+  };
+
+  const handleUpdateName = async () => {
+    const { error } = await updateProfile({
+      username: formData.username,
+      display_name: formData.display_name
+    });
+    if (error) {
+      toast.error('Failed to update name');
+    } else {
+      toast.success('Name updated successfully');
+      setShowEditName(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error('Failed to sign out');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  if (!user) {
+    navigate('/auth');
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
   
   const followers = [
     { id: 1, username: "@techie_sam", name: "Sam Wilson", avatar: "/api/placeholder/40/40", isFollowing: true },
@@ -90,7 +162,7 @@ const Profile = () => {
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold">@sujatha</h1>
+              <h1 className="text-xl font-bold">@{profile?.username || 'user'}</h1>
               <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
                 <DialogTrigger asChild>
                   <Button
@@ -135,14 +207,14 @@ const Profile = () => {
                 </DialogContent>
               </Dialog>
             </div>
-            <p className="text-lg font-medium text-foreground mb-1">SUJATHA</p>
-            <p className="text-muted-foreground">sujatha@mom.com</p>
+            <p className="text-lg font-medium text-foreground mb-1">{profile?.display_name || 'User'}</p>
+            <p className="text-muted-foreground">{user.email}</p>
             <Button
               variant="ghost"
               size="sm"
               className="text-muted-foreground text-xs p-0 h-auto mt-1"
             >
-              📍 Mumbai, India
+              📍 {profile?.location || 'Location not set'}
             </Button>
           </div>
         </div>
@@ -181,17 +253,30 @@ const Profile = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" placeholder="Tell us about yourself..." defaultValue="Tech enthusiast and seller in Mumbai" />
+                <Textarea 
+                  id="bio" 
+                  placeholder="Tell us about yourself..." 
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="location">Location</Label>
-                <Input id="location" defaultValue="Mumbai, India" />
+                <Input 
+                  id="location" 
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" defaultValue="+91 98765 43210" />
+                <Input 
+                  id="phone" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
               </div>
-              <Button className="w-full">Save Changes</Button>
+              <Button className="w-full" onClick={handleUpdateProfile}>Save Changes</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -205,13 +290,21 @@ const Profile = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" defaultValue="@sujatha" />
+                <Input 
+                  id="username" 
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="displayName">Display Name</Label>
-                <Input id="displayName" defaultValue="SUJATHA" />
+                <Input 
+                  id="displayName" 
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                />
               </div>
-              <Button className="w-full">Save Changes</Button>
+              <Button className="w-full" onClick={handleUpdateName}>Save Changes</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -244,17 +337,17 @@ const Profile = () => {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div className="cursor-pointer" onClick={() => navigate('/my-listings')}>
             <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">24</p>
+            <p className="text-2xl font-bold">{profile?.items_sold || 0}</p>
             <p className="text-sm text-muted-foreground">Items Sold</p>
           </div>
           <div className="cursor-pointer" onClick={() => navigate('/reviews')}>
             <Star className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">4.8</p>
+            <p className="text-2xl font-bold">{profile?.rating || 0}</p>
             <p className="text-sm text-muted-foreground">Rating</p>
           </div>
           <div className="cursor-pointer" onClick={() => navigate('/reviews')}>
             <MessageCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">156</p>
+            <p className="text-2xl font-bold">{profile?.total_reviews || 0}</p>
             <p className="text-sm text-muted-foreground">Reviews</p>
           </div>
         </div>
@@ -334,10 +427,7 @@ const Profile = () => {
         <Button
           variant="outline"
           className="w-full text-destructive border-destructive/20 hover:bg-destructive/5"
-          onClick={() => {
-            // Handle logout
-            navigate("/auth");
-          }}
+          onClick={handleSignOut}
         >
           <LogOut className="h-4 w-4 mr-2" />
           Log Out

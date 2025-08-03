@@ -1,46 +1,46 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 const Cart = () => {
   const navigate = useNavigate();
-  
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      title: "iPhone 14 Pro Max",
-      price: 899,
-      quantity: 1,
-      image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png",
-      seller: "tech_deals"
-    },
-    {
-      id: 2,
-      title: "Gaming Chair",
-      price: 299,
-      quantity: 2,
-      image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png",
-      seller: "gamer_pro"
-    }
-  ]);
+  const { cartItems, loading, updateQuantity, removeFromCart } = useCart();
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setCartItems(cartItems.filter(item => item.id !== id));
+  const handleUpdateQuantity = async (cartItemId: string, newQuantity: number) => {
+    const { error } = await updateQuantity(cartItemId, newQuantity);
+    if (error) {
+      toast.error('Failed to update quantity');
+    }
+  };
+
+  const handleRemoveItem = async (cartItemId: string) => {
+    const { error } = await removeFromCart(cartItemId);
+    if (error) {
+      toast.error('Failed to remove item');
     } else {
-      setCartItems(cartItems.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      ));
+      toast.success('Item removed from cart');
     }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-  };
+  const total = cartItems.reduce((sum, item) => {
+    const price = item.products?.price || 0;
+    return sum + (price * item.quantity);
+  }, 0);
 
-  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading cart...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,19 +65,19 @@ const Cart = () => {
         <>
           {/* Cart Items */}
           <div className="p-4 space-y-4">
-            {cartItems.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground">by @{item.seller}</p>
-                      <p className="text-lg font-bold text-primary">${item.price}</p>
+              {cartItems.map((item) => (
+                <Card key={item.id}>
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <img
+                        src={item.products?.images?.[0] || '/placeholder.svg'}
+                        alt={item.products?.title || 'Product'}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{item.products?.title}</h3>
+                        <p className="text-sm text-muted-foreground">by @{item.products?.profiles?.username}</p>
+                        <p className="text-lg font-bold text-primary">${item.products?.price}</p>
                       
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ const Cart = () => {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -94,7 +94,7 @@ const Cart = () => {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -104,7 +104,7 @@ const Cart = () => {
                           variant="ghost"
                           size="icon"
                           className="text-red-500 hover:text-red-600"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => handleRemoveItem(item.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
