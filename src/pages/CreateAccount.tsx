@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const CreateAccount = () => {
@@ -20,9 +21,70 @@ const CreateAccount = () => {
     password: "",
     confirmPassword: ""
   });
+  const [validation, setValidation] = useState<{
+    username: { checking: boolean; available: boolean | null };
+    email: { checking: boolean; available: boolean | null };
+    phone: { checking: boolean; available: boolean | null };
+  }>({
+    username: { checking: false, available: null },
+    email: { checking: false, available: null },
+    phone: { checking: false, available: null }
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Trigger validation for username, email, phone
+    if (field === 'username' || field === 'email' || field === 'phone') {
+      setValidation(prev => ({
+        ...prev,
+        [field]: { checking: true, available: null }
+      }));
+    }
+  };
+
+  // Debounced validation effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.username && validation.username.checking) {
+        validateField('username', formData.username);
+      }
+      if (formData.email && validation.email.checking) {
+        validateField('email', formData.email);
+      }
+      if (formData.phone && validation.phone.checking) {
+        validateField('phone', formData.phone);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.username, formData.email, formData.phone]);
+
+  const validateField = async (field: string, value: string) => {
+    if (!value) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq(field, value)
+        .limit(1);
+
+      if (error) throw error;
+
+      const fieldKey = field as keyof typeof validation;
+      setValidation(prev => ({
+        ...prev,
+        [fieldKey]: { checking: false, available: data.length === 0 }
+      }));
+    } catch (error) {
+      console.error(`Error validating ${field}:`, error);
+      const fieldKey = field as keyof typeof validation;
+      setValidation(prev => ({
+        ...prev,
+        [fieldKey]: { checking: false, available: null }
+      }));
+    }
   };
 
   const handleCreateAccount = async () => {
@@ -77,38 +139,77 @@ const CreateAccount = () => {
       <div className="p-6 max-w-md mx-auto space-y-6">
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder="Choose a unique username"
-            value={formData.username}
-            onChange={(e) => handleInputChange("username", e.target.value)}
-            className="h-12"
-          />
+          <div className="relative">
+            <Input
+              id="username"
+              type="text"
+              placeholder="Choose a unique username"
+              value={formData.username}
+              onChange={(e) => handleInputChange("username", e.target.value)}
+              className="h-12 pr-12"
+            />
+            {formData.username && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {validation.username.checking ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                ) : validation.username.available === true ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : validation.username.available === false ? (
+                  <X className="h-4 w-4 text-red-500" />
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="Enter your email address"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
-            className="h-12"
-          />
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              className="h-12 pr-12"
+            />
+            {formData.email && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {validation.email.checking ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                ) : validation.email.available === true ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : validation.email.available === false ? (
+                  <X className="h-4 w-4 text-red-500" />
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="phone">Phone Number</Label>
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="Enter your phone number"
-            value={formData.phone}
-            onChange={(e) => handleInputChange("phone", e.target.value)}
-            className="h-12"
-          />
+          <div className="relative">
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="Enter your phone number"
+              value={formData.phone}
+              onChange={(e) => handleInputChange("phone", e.target.value)}
+              className="h-12 pr-12"
+            />
+            {formData.phone && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {validation.phone.checking ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                ) : validation.phone.available === true ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : validation.phone.available === false ? (
+                  <X className="h-4 w-4 text-red-500" />
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">

@@ -1,239 +1,192 @@
-import { useState } from "react";
-import { Search, Bell, MapPin, Heart, Share } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import BottomNavigation from "@/components/BottomNavigation";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Heart, MapPin, Bell, Search, Users, Car, Home as HomeIcon, Gamepad2, Shirt, Laptop, Music, Camera, Baby, MoreHorizontal, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import BottomNavigation from "@/components/BottomNavigation";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useProducts } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { products, loading: productsLoading } = useProducts();
+  const { categories } = useCategories();
   const [searchQuery, setSearchQuery] = useState("");
-  const [likedProducts, setLikedProducts] = useState<number[]>([]);
+  const [likedProducts, setLikedProducts] = useState<{ [key: string]: boolean }>({});
+  const [userLocation, setUserLocation] = useState("New York");
 
-  const categories = [
-    { name: "Electronics", icon: "📱", color: "bg-blue-100" },
-    { name: "Fashion", icon: "👗", color: "bg-pink-100" },
-    { name: "Home", icon: "🏠", color: "bg-green-100" },
-    { name: "Sports", icon: "⚽", color: "bg-orange-100" },
-    { name: "Books", icon: "📚", color: "bg-red-100" },
-    { name: "Cars", icon: "🚗", color: "bg-yellow-100" },
-    { name: "Beauty", icon: "💄", color: "bg-purple-100" },
-    { name: "Gaming", icon: "🎮", color: "bg-indigo-100" },
-  ];
-
-  const products = [
-    {
-      id: 1,
-      title: "iPhone 14 Pro - Excellent Condition",
-      price: "$899",
-      location: "New York, NY",
-      seller: "@techseller_NY",
-      time: "2h",
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=300&h=200&fit=crop"
-    },
-    {
-      id: 2,
-      title: "MacBook Air M2 - Like New",
-      price: "$1,200",
-      location: "Los Angeles, CA",
-      seller: "@apple_reseller",
-      time: "4h",
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=300&h=200&fit=crop"
-    },
-    {
-      id: 3,
-      title: "Gaming Setup Complete",
-      price: "$2,500",
-      location: "Chicago, IL",
-      seller: "@gamer_hub",
-      time: "6h",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=200&fit=crop"
-    },
-    {
-      id: 4,
-      title: "Vintage Leather Jacket",
-      price: "$150",
-      location: "Miami, FL",
-      seller: "@vintage_lover",
-      time: "8h",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=200&fit=crop"
-    },
-    {
-      id: 5,
-      title: "Designer Handbag Collection",
-      price: "$800",
-      location: "San Francisco, CA",
-      seller: "@luxury_bags",
-      time: "12h",
-      image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300&h=200&fit=crop"
-    },
-    {
-      id: 6,
-      title: "Professional Camera Kit",
-      price: "$1,800",
-      location: "Seattle, WA",
-      seller: "@photographer_pro",
-      time: "14h",
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop"
-    },
-    {
-      id: 7,
-      title: "Workout Equipment Set",
-      price: "$600",
-      location: "Boston, MA",
-      seller: "@fitness_gear",
-      time: "16h",
-      image: "https://images.unsplash.com/photo-1472396961693-142e6e269027?w=300&h=200&fit=crop"
-    },
-    {
-      id: 8,
-      title: "Art Collection Pieces",
-      price: "$1,500",
-      location: "Austin, TX",
-      seller: "@art_collector",
-      time: "18h",
-      image: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?w=300&h=200&fit=crop"
-    },
-    {
-      id: 9,
-      title: "Musical Instruments Bundle",
-      price: "$950",
-      location: "Nashville, TN",
-      seller: "@music_maker",
-      time: "20h",
-      image: "https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=300&h=200&fit=crop"
-    },
-    {
-      id: 10,
-      title: "Home Furniture Set",
-      price: "$2,200",
-      location: "Denver, CO",
-      seller: "@home_decorator",
-      time: "1d",
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=300&h=200&fit=crop"
+  // Get user's location on mount
+  useEffect(() => {
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+      setUserLocation(savedLocation);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // In a real app, you'd reverse geocode this to get city name
+          setUserLocation("Current Location");
+        },
+        (error) => {
+          console.log("Location access denied");
+        }
+      );
     }
-  ];
+  }, []);
+
+  // Category icons mapping
+  const categoryIcons = {
+    Electronics: Laptop,
+    Fashion: Shirt,
+    Vehicles: Car,
+    "Home & Garden": HomeIcon,
+    Sports: Users,
+    Gaming: Gamepad2,
+    Music: Music,
+    Photography: Camera,
+    "Baby & Kids": Baby,
+    More: MoreHorizontal,
+  };
+
+  const toggleLike = (productId: string) => {
+    setLikedProducts(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="flex items-center justify-between mb-3">
-          <div 
-            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-colors"
-            onClick={() => navigate('/location')}
-          >
-            <MapPin className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-primary">New York, NY</span>
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{userLocation}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => navigate("/notifications")}
+            >
+              <Bell className="h-6 w-6" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={() => navigate("/notifications")}>
-            <Bell className="h-6 w-6" />
-          </Button>
-        </div>
-        
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">Hi sujatha! 👋</h1>
-        </div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Good morning!</h2>
+              <p className="text-sm text-muted-foreground">{profile?.username || user?.email?.split('@')[0] || 'User'}</p>
+            </div>
+          </div>
 
-        <div className="relative cursor-pointer" onClick={() => navigate('/search')}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Search products, sellers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 rounded-full cursor-pointer"
-            readOnly
-          />
+          <div className="mt-4 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search for products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-12"
+              onFocus={() => navigate('/search')}
+            />
+          </div>
         </div>
       </div>
 
       {/* Categories */}
-      <div className="px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Categories</h2>
-          <Button variant="link" className="text-primary" onClick={() => navigate("/categories")}>See All</Button>
-        </div>
-        
-        <div className="flex gap-4">
-          {categories.slice(0, 4).map((category) => (
-            <div 
-              key={category.name} 
-              className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate(`/category/${category.name.toLowerCase().replace(' & ', '-').replace(' ', '-')}`)}
-            >
-              <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mb-2`}>
-                <span className="text-2xl">{category.icon}</span>
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-4">Categories</h3>
+        <div className="grid grid-cols-5 gap-4 p-4">
+          {categories.map((category) => {
+            const IconComponent = categoryIcons[category.name as keyof typeof categoryIcons] || MoreHorizontal;
+            return (
+              <div
+                key={category.id}
+                className="flex flex-col items-center gap-2 cursor-pointer"
+                onClick={() => navigate(`/categories/${category.id}`)}
+              >
+                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", category.color || "bg-gray-500")}>
+                  <IconComponent className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-center text-muted-foreground">{category.name}</span>
               </div>
-              <span className="text-sm font-medium">{category.name}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Latest Products */}
-      <div className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Latest Products</h2>
-          <Button variant="link" className="text-primary" onClick={() => navigate('/search?tab=products')}>See All</Button>
-        </div>
-
-        <div className="space-y-4">
-          {products.map((product) => (
-            <Card 
-              key={product.id} 
-              className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/product/${product.id}`)}
-            >
-              <CardContent className="p-0">
-                <img 
-                  src={product.image} 
-                  alt={product.title}
-                  className="aspect-video w-full object-cover rounded-t-lg mb-3"
-                />
-                <div className="px-4 pb-4">
-                  <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
-                  <p className="text-2xl font-bold text-primary mb-2">{product.price}</p>
-                  <p className="text-sm text-muted-foreground mb-1">{product.location}</p>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-primary">{product.seller}</p>
-                    <p className="text-sm text-muted-foreground">{product.time}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
+      <div className="px-4 pb-20">
+        <h3 className="text-lg font-semibold mb-4">Latest Products</h3>
+        <div className="space-y-4 p-4">
+          {productsLoading ? (
+            <div className="text-center py-8">Loading products...</div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No products available</div>
+          ) : (
+            products.map((product) => (
+              <div
+                key={product.id}
+                className="border rounded-lg overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                <div className="relative">
+                  <img
+                    src={product.images?.[0] || "/placeholder.svg"}
+                    alt={product.title}
+                    className="w-full h-48 object-cover"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm",
+                      likedProducts[product.id] && "text-red-500"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleLike(product.id);
+                    }}
+                  >
+                    <Heart className={cn("h-4 w-4", likedProducts[product.id] && "fill-current")} />
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg">{product.title}</h3>
+                  <p className="text-xl font-bold text-primary">${product.price}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{product.location}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {product.seller_id} • ⭐ {4.5}
+                      </p>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="p-1 h-auto"
+                        size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLikedProducts(prev => 
-                            prev.includes(product.id) 
-                              ? prev.filter(id => id !== product.id)
-                              : [...prev, product.id]
-                          );
+                          // Share functionality
                         }}
                       >
-                        <Heart className={`h-4 w-4 ${likedProducts.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+                        <Share2 className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm text-muted-foreground">24</span>
+                      <span className="text-sm text-muted-foreground">{product.likes} likes</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-auto"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate('/share');
-                      }}
-                    >
-                      <Share className="h-4 w-4 text-muted-foreground" />
-                    </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(product.created_at).toLocaleDateString()}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
