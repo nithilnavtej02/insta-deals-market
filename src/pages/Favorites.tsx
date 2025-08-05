@@ -2,11 +2,28 @@ import { ArrowLeft, Heart, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
 
 const Favorites = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { favorites, loading, removeFromFavorites } = useFavorites();
 
-  const favorites = [
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Loading favorites...</div>
+      </div>
+    );
+  }
+
+  const dummyFavorites = [
     {
       id: 1,
       title: "Vintage Watch Collection",
@@ -66,8 +83,13 @@ const Favorites = () => {
 
       {/* Favorites Grid */}
       <div className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {favorites.map((item) => (
+        {(favorites.length === 0 && !loading) ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No favorites yet. Start exploring products!
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {(favorites.length > 0 ? favorites : dummyFavorites).map((item) => (
             <Card key={item.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => navigate(`/product/${item.id}`)}>
               <CardContent className="p-0">
@@ -81,6 +103,10 @@ const Favorites = () => {
                     variant="ghost"
                     size="icon"
                     className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFromFavorites(item.product_id || item.id);
+                    }}
                   >
                     <Heart className="h-4 w-4 fill-red-500 text-red-500" />
                   </Button>
@@ -93,7 +119,7 @@ const Favorites = () => {
                     {item.location}
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-primary">{item.seller}</p>
+                    <p className="text-xs text-primary">{item.seller || item.profiles?.username || 'Unknown'}</p>
                     <Button variant="ghost" size="sm" className="h-6 px-2">
                       <MessageCircle className="h-3 w-3" />
                     </Button>
@@ -101,8 +127,9 @@ const Favorites = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,11 +2,28 @@ import { ArrowLeft, Bell, Heart, MessageCircle, Package, Star, UserPlus } from "
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/hooks/useAuth";
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { notifications, loading, markAsRead } = useNotifications();
 
-  const notifications = [
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Loading notifications...</div>
+      </div>
+    );
+  }
+
+  const dummyNotifications = [
     {
       id: 1,
       type: "like",
@@ -112,7 +129,7 @@ const Notifications = () => {
 
       {/* Notifications List */}
       <div className="divide-y">
-        {notifications.map((notification) => {
+        {(notifications.length > 0 ? notifications : dummyNotifications).map((notification) => {
           const Icon = notification.icon;
           return (
             <div

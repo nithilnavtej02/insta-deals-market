@@ -1,15 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Edit, Eye, Heart, MessageCircle, Plus, Calendar, User, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 
 const MyListings = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile } = useProfile();
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [userProducts, setUserProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && profile) {
+      fetchUserProducts();
+    }
+  }, [user, profile]);
+
+  const fetchUserProducts = async () => {
+    if (!profile) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories (name)
+        `)
+        .eq('seller_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching user products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Loading your listings...</div>
+      </div>
+    );
+  }
 
   const listings = [
     {
@@ -84,63 +132,73 @@ const MyListings = () => {
 
       {/* Listings */}
       <div className="p-4 space-y-4">
-        {listings.map((listing) => (
-          <Card key={listing.id} className="overflow-hidden cursor-pointer">
-            <CardContent className="p-0">
-              <div className="flex" onClick={() => navigate(`/product/${listing.id}`)}>
-                <img
-                  src={listing.image}
-                  alt={listing.title}
-                  className="w-24 h-24 object-cover"
-                />
-                <div className="flex-1 p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold">{listing.title}</h3>
-                    <Badge 
-                      variant={listing.status === "sold" ? "secondary" : "default"}
-                      className="cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStatusClick(listing);
-                      }}
-                    >
-                      {listing.status}
-                    </Badge>
-                  </div>
-                  <p className="text-lg font-bold text-primary mb-2">{listing.price}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4" />
-                      {listing.views}
+        {userProducts.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">You haven't listed any products yet</p>
+            <Button onClick={() => navigate('/sell')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Listing
+            </Button>
+          </div>
+        ) : (
+          userProducts.map((product) => (
+            <Card key={product.id} className="overflow-hidden cursor-pointer">
+              <CardContent className="p-0">
+                <div className="flex" onClick={() => navigate(`/product/${product.id}`)}>
+                  <img
+                    src={product.images?.[0] || "/placeholder.svg"}
+                    alt={product.title}
+                    className="w-24 h-24 object-cover"
+                  />
+                  <div className="flex-1 p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold">{product.title}</h3>
+                      <Badge 
+                        variant={product.status === "sold" ? "secondary" : "default"}
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusClick(product);
+                        }}
+                      >
+                        {product.status}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Heart className="h-4 w-4" />
-                      {listing.likes}
+                    <p className="text-lg font-bold text-primary mb-2">${product.price}</p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        {product.views || 0}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-4 w-4" />
+                        {product.likes || 0}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="h-4 w-4" />
+                        0
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageCircle className="h-4 w-4" />
-                      {listing.messages}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{new Date(product.created_at).toLocaleDateString()}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/sell?edit=${product.id}`);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{listing.postedDate}</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/sell?edit=${listing.id}`);
-                      }}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Status Details Dialog */}

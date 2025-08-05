@@ -60,7 +60,7 @@ const CreateAccount = () => {
     return () => clearTimeout(timer);
   }, [formData.username, formData.email, formData.phone]);
 
-  const validateField = async (field: string, value: string) => {
+  const validateField = async (field: 'username' | 'email' | 'phone', value: string) => {
     if (!value) return;
 
     try {
@@ -72,17 +72,15 @@ const CreateAccount = () => {
 
       if (error) throw error;
 
-      const fieldKey = field as keyof typeof validation;
       setValidation(prev => ({
         ...prev,
-        [fieldKey]: { checking: false, available: data.length === 0 }
+        [field]: { checking: false, available: data.length === 0 }
       }));
     } catch (error) {
       console.error(`Error validating ${field}:`, error);
-      const fieldKey = field as keyof typeof validation;
       setValidation(prev => ({
         ...prev,
-        [fieldKey]: { checking: false, available: null }
+        [field]: { checking: false, available: null }
       }));
     }
   };

@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useReels } from "@/hooks/useReels";
 
 const Reels = () => {
   const navigate = useNavigate();
+  const { reels: backendReels, loading, incrementLikes, decrementLikes, incrementViews } = useReels();
   
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -16,8 +18,9 @@ const Reels = () => {
     }
     return num.toString();
   };
-  
-  const reels = [
+
+  // Use backend reels if available, otherwise fallback to dummy data
+  const dummyReels = [
     {
       id: 1,
       title: "Vintage Watch Collection",
@@ -124,24 +127,52 @@ const Reels = () => {
     }
   ];
 
-  const [reelStates, setReelStates] = useState(
-    reels.map(reel => ({ 
-      isLiked: reel.isLiked, 
-      isSaved: reel.isSaved, 
-      likes: reel.likes 
-    }))
-  );
+  const reels = backendReels.length > 0 ? backendReels : dummyReels;
 
-  const toggleLike = (index: number) => {
-    const newStates = [...reelStates];
-    newStates[index].isLiked = !newStates[index].isLiked;
-    newStates[index].likes += newStates[index].isLiked ? 1 : -1;
+  const [reelStates, setReelStates] = useState<{ [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } }>({});
+
+  useEffect(() => {
+    // Initialize reel states
+    const initialStates: { [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } } = {};
+    reels.forEach(reel => {
+      initialStates[reel.id] = {
+        isLiked: false,
+        isSaved: false,
+        likes: reel.likes || 0
+      };
+    });
+    setReelStates(initialStates);
+  }, [reels]);
+
+  const toggleLike = (reelId: string) => {
+    const currentState = reelStates[reelId];
+    if (!currentState) return;
+
+    const newStates = { ...reelStates };
+    newStates[reelId] = {
+      ...currentState,
+      isLiked: !currentState.isLiked,
+      likes: currentState.isLiked ? currentState.likes - 1 : currentState.likes + 1
+    };
     setReelStates(newStates);
+
+    // Update backend
+    if (currentState.isLiked) {
+      decrementLikes(reelId);
+    } else {
+      incrementLikes(reelId);
+    }
   };
 
-  const toggleSave = (index: number) => {
-    const newStates = [...reelStates];
-    newStates[index].isSaved = !newStates[index].isSaved;
+  const toggleSave = (reelId: string) => {
+    const currentState = reelStates[reelId];
+    if (!currentState) return;
+
+    const newStates = { ...reelStates };
+    newStates[reelId] = {
+      ...currentState,
+      isSaved: !currentState.isSaved
+    };
     setReelStates(newStates);
   };
 
@@ -190,10 +221,15 @@ const Reels = () => {
                   </div>
 
                   {/* Buy Button - Top Right */}
-                  {reel.buyable && (
+                  {(reel.buy_link || reel.buyable) && (
                     <Button
                       className="absolute top-5 right-5 bg-primary/95 hover:bg-primary text-white px-3 py-2 rounded-full flex items-center gap-2 shadow-lg"
                       size="sm"
+                      onClick={() => {
+                        if (reel.buy_link) {
+                          window.open(reel.buy_link, '_blank');
+                        }
+                      }}
                     >
                       <ShoppingBag className="h-3.5 w-3.5" />
                       <span className="text-xs font-semibold">Buy</span>
@@ -229,23 +265,23 @@ const Reels = () => {
                         size="icon"
                         className={cn(
                           "w-11 h-11 rounded-full backdrop-blur-sm border-0",
-                          reelStates[index]?.isLiked 
+                          reelStates[reel.id]?.isLiked
                             ? 'bg-red-500/30' 
                             : 'bg-white/20 hover:bg-white/30'
                         )}
-                        onClick={() => toggleLike(index)}
+                        onClick={() => toggleLike(reel.id)}
                       >
                         <Heart 
                           className={cn(
                             "h-6 w-6",
-                            reelStates[index]?.isLiked 
+                            reelStates[reel.id]?.isLiked 
                               ? 'fill-red-500 text-red-500' 
                               : 'text-white'
                           )} 
                         />
                       </Button>
                       <span className="text-white text-xs font-semibold">
-                        {formatNumber(reelStates[index]?.likes || 0)}
+                        {formatNumber(reelStates[reel.id]?.likes || reel.likes || 0)}
                       </span>
                     </div>
 
@@ -279,12 +315,12 @@ const Reels = () => {
                       variant="ghost"
                       size="icon"
                       className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                      onClick={() => toggleSave(index)}
+                      onClick={() => toggleSave(reel.id)}
                     >
                       <Bookmark 
                         className={cn(
                           "h-6 w-6 text-white",
-                          reelStates[index]?.isSaved && 'fill-white'
+                          reelStates[reel.id]?.isSaved && 'fill-white'
                         )} 
                       />
                     </Button>

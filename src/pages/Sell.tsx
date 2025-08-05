@@ -1,19 +1,35 @@
 import { useState, useRef } from "react";
-import { MapPin, Camera, Upload, X, Video } from "lucide-react";
+import { MapPin, Camera, Upload, X, Video, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import BottomNavigation from "@/components/BottomNavigation";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useProducts } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
+import { useLocation } from "@/hooks/useLocation";
+import { toast } from "sonner";
 
 const Sell = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { createProduct } = useProducts();
+  const { categories } = useCategories();
+  const { location: userLocation } = useLocation();
+  
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    title: "",
     description: "",
     price: "",
     condition: "",
-    category: "",
-    location: ""
+    categoryId: "",
+    location: userLocation || ""
   });
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
@@ -21,7 +37,6 @@ const Sell = () => {
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const conditions = ["New", "Like New", "Good", "Fair"];
-  const categories = ["Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Cars"];
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -45,16 +60,68 @@ const Sell = () => {
     setVideo(null);
   };
 
-  const handlePublish = () => {
-    // Handle listing publication
-    console.log("Publishing listing:", { ...formData, images, video });
+  const handlePublish = async () => {
+    if (!user || !profile) {
+      toast.error("Please sign in to list a product");
+      navigate("/auth");
+      return;
+    }
+
+    if (!formData.title || !formData.price || !formData.description || images.length === 0) {
+      toast.error("Please fill all required fields and add at least one image");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Convert File objects to data URLs for storage
+      const imageUrls = await Promise.all(
+        images.map(async (file) => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      const { data, error } = await createProduct({
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        condition: formData.condition.toLowerCase().replace(' ', '_') as 'new' | 'like_new' | 'good' | 'fair',
+        category_id: formData.categoryId || null,
+        location: formData.location,
+        images: imageUrls
+      });
+
+      if (error) {
+        toast.error("Failed to create listing");
+      } else {
+        toast.success("Product listed successfully!");
+        navigate("/my-listings");
+      }
+    } catch (error) {
+      toast.error("An error occurred while creating the listing");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-white border-b px-4 py-4">
-        <h1 className="text-xl font-semibold">Sell Your Item</h1>
-        <p className="text-muted-foreground">List your product for sale</p>
+      <div className="flex items-center p-4 border-b">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => navigate("/")}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+        <div className="ml-4">
+          <h1 className="text-xl font-semibold">Sell Your Item</h1>
+          <p className="text-muted-foreground">List your product for sale</p>
+        </div>
       </div>
 
       <div className="p-4 space-y-6">
@@ -171,9 +238,25 @@ const Sell = () => {
             />
           </div>
         </div>
+
+        {/* Title */}
+        <div className="space-y-2">
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            type="text"
+            placeholder="What are you selling?"
+            value={formData.title}
+            onChange={(e) => handleInputChange("title", e.target.value)}
+            className="h-12"
+          />
+        </div>
+
         {/* Description */}
         <div className="space-y-2">
+          <Label htmlFor="description">Description *</Label>
           <Textarea
+            id="description"
             placeholder="Describe your item in detail..."
             value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
@@ -228,13 +311,13 @@ const Sell = () => {
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
                 <Button
-                  key={category}
-                  variant={formData.category === category ? "reown" : "outline"}
+                  key={category.id}
+                  variant={formData.categoryId === category.id ? "reown" : "outline"}
                   size="sm"
-                  onClick={() => handleInputChange("category", category)}
+                  onClick={() => handleInputChange("categoryId", category.id)}
                   className="text-xs"
                 >
-                  {category}
+                  {category.name}
                 </Button>
               ))}
             </div>
@@ -287,8 +370,9 @@ const Sell = () => {
           size="lg"
           className="w-full"
           onClick={handlePublish}
+          disabled={loading}
         >
-          Publish Listing
+          {loading ? "Publishing..." : "Publish Listing"}
         </Button>
       </div>
 
