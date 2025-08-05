@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
+import { useLocation } from "@/hooks/useLocation";
+import { useShareProduct } from "@/hooks/useShareProduct";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -16,25 +18,15 @@ const Home = () => {
   const { profile } = useProfile();
   const { products, loading: productsLoading } = useProducts();
   const { categories } = useCategories();
+  const { location, updateLocation, getCurrentLocation } = useLocation();
+  const { shareProduct } = useShareProduct();
   const [searchQuery, setSearchQuery] = useState("");
   const [likedProducts, setLikedProducts] = useState<{ [key: string]: boolean }>({});
-  const [userLocation, setUserLocation] = useState("New York");
 
   // Get user's location on mount
   useEffect(() => {
-    const savedLocation = localStorage.getItem('userLocation');
-    if (savedLocation) {
-      setUserLocation(savedLocation);
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // In a real app, you'd reverse geocode this to get city name
-          setUserLocation("Current Location");
-        },
-        (error) => {
-          console.log("Location access denied");
-        }
-      );
+    if (!location || location === "New York") {
+      getCurrentLocation();
     }
   }, []);
 
@@ -65,9 +57,12 @@ const Home = () => {
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div 
+              className="flex items-center gap-1 text-sm text-muted-foreground cursor-pointer"
+              onClick={() => navigate('/location')}
+            >
               <MapPin className="h-4 w-4" />
-              <span>{userLocation}</span>
+              <span>{location}</span>
             </div>
             <Button
               variant="ghost"
@@ -100,9 +95,18 @@ const Home = () => {
 
       {/* Categories */}
       <div className="p-4">
-        <h3 className="text-lg font-semibold mb-4">Categories</h3>
-        <div className="grid grid-cols-5 gap-4 p-4">
-          {categories.map((category) => {
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Categories</h3>
+          <Button 
+            variant="ghost" 
+            className="text-primary text-sm"
+            onClick={() => navigate('/categories')}
+          >
+            See All
+          </Button>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {categories.slice(0, 4).map((category) => {
             const IconComponent = categoryIcons[category.name as keyof typeof categoryIcons] || MoreHorizontal;
             return (
               <div
@@ -172,7 +176,7 @@ const Home = () => {
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Share functionality
+                          shareProduct(product.id, product.title);
                         }}
                       >
                         <Share2 className="h-4 w-4" />

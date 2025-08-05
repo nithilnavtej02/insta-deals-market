@@ -240,7 +240,7 @@ const ProductDetail = () => {
                 variant="outline"
                 size="sm"
                 className="w-full sm:w-auto"
-                onClick={() => navigate(`/profile/${product.profiles?.username}`)}
+                onClick={() => navigate(`/profile/${product.seller_id}`)}
               >
                 View Profile
               </Button>

@@ -22,6 +22,7 @@ import ShareSheet from "./pages/ShareSheet";
 import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
 import SellerProfile from "./pages/SellerProfile";
+import PublicProfile from "./pages/PublicProfile";
 import MyListings from "./pages/MyListings";
 import Favorites from "./pages/Favorites";
 import Reviews from "./pages/Reviews";
@@ -63,13 +64,14 @@ const AppContent = () => {
         <Route path="/home" element={user ? <Home /> : <Navigate to="/auth" />} />
         <Route path="/search" element={user ? <Search /> : <Navigate to="/auth" />} />
         <Route path="/categories" element={user ? <Categories /> : <Navigate to="/auth" />} />
-        <Route path="/category/:id" element={user ? <CategoryProducts /> : <Navigate to="/auth" />} />
+        <Route path="/categories/:categoryId" element={user ? <CategoryProducts /> : <Navigate to="/auth" />} />
         <Route path="/product/:id" element={user ? <ProductDetail /> : <Navigate to="/auth" />} />
         <Route path="/sell" element={user ? <Sell /> : <Navigate to="/auth" />} />
         <Route path="/reels" element={user ? <Reels /> : <Navigate to="/auth" />} />
         <Route path="/reel/:id/comments" element={user ? <ReelComments /> : <Navigate to="/auth" />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
-        <Route path="/profile/:id" element={user ? <SellerProfile /> : <Navigate to="/auth" />} />
+         <Route path="/profile/:profileId" element={user ? <PublicProfile /> : <Navigate to="/auth" />} />
+         <Route path="/seller/:username" element={user ? <SellerProfile /> : <Navigate to="/auth" />} />
         <Route path="/my-listings" element={user ? <MyListings /> : <Navigate to="/auth" />} />
         <Route path="/favorites" element={user ? <Favorites /> : <Navigate to="/auth" />} />
         <Route path="/saved" element={user ? <Saved /> : <Navigate to="/auth" />} />
