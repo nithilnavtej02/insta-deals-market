@@ -47,8 +47,15 @@ const MyListings = () => {
   };
 
   if (!user) {
-    navigate("/auth");
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Please sign in</h2>
+          <p className="text-muted-foreground mb-4">You need to sign in to view your listings.</p>
+          <Button onClick={() => navigate('/auth')}>Sign In</Button>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
@@ -59,53 +66,6 @@ const MyListings = () => {
     );
   }
 
-  const listings = [
-    {
-      id: 1,
-      title: "iPhone 14 Pro Max",
-      price: "$899",
-      status: "active",
-      views: 145,
-      likes: 23,
-      messages: 8,
-      image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png",
-      postedDate: "2 days ago",
-      soldTo: null,
-      soldDate: null
-    },
-    {
-      id: 2,
-      title: "MacBook Air M2",
-      price: "$1,200",
-      status: "sold",
-      views: 89,
-      likes: 15,
-      messages: 12,
-      image: "/lovable-uploads/7ca162be-1e79-409e-bfbf-704e1e3a247a.png",
-      postedDate: "1 week ago",
-      soldTo: {
-        name: "John Doe",
-        username: "@johndoe",
-        phone: "+91 98765 43210",
-        email: "john@example.com"
-      },
-      soldDate: "3 days ago",
-      soldPrice: "$1,200"
-    },
-    {
-      id: 3,
-      title: "Gaming Setup",
-      price: "$800",
-      status: "active",
-      views: 67,
-      likes: 9,
-      messages: 3,
-      image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png",
-      postedDate: "3 days ago",
-      soldTo: null,
-      soldDate: null
-    }
-  ];
 
   const handleStatusClick = (listing: any) => {
     setSelectedListing(listing);

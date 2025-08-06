@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -99,42 +100,60 @@ const Profile = () => {
     );
   }
   
-  const followers = [
-    { id: 1, username: "@techie_sam", name: "Sam Wilson", avatar: "/api/placeholder/40/40", isFollowing: true },
-    { id: 2, username: "@gadget_guru", name: "Alex Chen", avatar: "/api/placeholder/40/40", isFollowing: false },
-    { id: 3, username: "@phone_dealer", name: "Mike Ross", avatar: "/api/placeholder/40/40", isFollowing: true },
-    { id: 4, username: "@apple_fan", name: "Sarah Jones", avatar: "/api/placeholder/40/40", isFollowing: false },
-  ];
-  
-  const following = [
-    { id: 5, username: "@luxury_seller", name: "Emma Davis", avatar: "/api/placeholder/40/40", isFollowing: true },
-    { id: 6, username: "@vintage_store", name: "John Smith", avatar: "/api/placeholder/40/40", isFollowing: true },
-    { id: 7, username: "@fashion_hub", name: "Lisa Wong", avatar: "/api/placeholder/40/40", isFollowing: true },
-  ];
-  const recentActivity = [
-    {
-      id: 1,
-      type: "sold",
-      item: "iPhone 14 Pro sold",
-      time: "2 hours ago",
-      amount: "$899",
-      icon: Package
-    },
-    {
-      id: 2,
-      type: "favorite",
-      item: "MacBook Air favorited",
-      time: "5 hours ago",
-      icon: Heart
-    },
-    {
-      id: 3,
-      type: "message",
-      item: "New message received",
-      time: "1 day ago",
-      icon: MessageCircle
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchFollowers();
+      fetchFollowing();
+      fetchRecentActivity();
     }
-  ];
+  }, [profile]);
+
+  const fetchFollowers = async () => {
+    if (!profile) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*, profiles:follower_id(*)')
+        .eq('following_id', profile.id);
+      
+      if (error) throw error;
+      setFollowers(data || []);
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    if (!profile) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*, profiles:following_id(*)')
+        .eq('follower_id', profile.id);
+      
+      if (error) throw error;
+      setFollowing(data || []);
+    } catch (error) {
+      console.error('Error fetching following:', error);
+    }
+  };
+
+  const fetchRecentActivity = async () => {
+    if (!profile) return;
+    
+    try {
+      // This would be a more complex query combining orders, favorites, messages
+      setRecentActivity([]); // For now, empty until we implement activity tracking
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
 
   const accountOptions = [
     { label: "My Listings", icon: Package, count: null },
@@ -156,15 +175,48 @@ const Profile = () => {
               const input = document.createElement('input');
               input.type = 'file';
               input.accept = 'image/*';
-              input.onchange = () => {
-                // Handle image upload here
-                console.log('Image selected:', input.files?.[0]);
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file && profile) {
+                  try {
+                    // Upload to Supabase storage
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${profile.id}.${fileExt}`;
+                    
+                    const { data, error } = await supabase.storage
+                      .from('avatars')
+                      .upload(fileName, file, { upsert: true });
+                    
+                    if (error) throw error;
+                    
+                    // Get public URL
+                    const { data: { publicUrl } } = supabase.storage
+                      .from('avatars')
+                      .getPublicUrl(fileName);
+                    
+                    // Update profile with new avatar URL
+                    await updateProfile({ avatar_url: publicUrl });
+                    toast.success('Profile picture updated!');
+                  } catch (error) {
+                    console.error('Error uploading avatar:', error);
+                    toast.error('Failed to upload profile picture');
+                  }
+                }
               };
               input.click();
             }}
           >
-            <AvatarImage src="/src/assets/profile-pic.jpg" />
-            <AvatarFallback className="bg-primary text-white text-xl">SU</AvatarFallback>
+            <AvatarImage src={profile?.avatar_url} />
+            <AvatarFallback className="bg-primary text-white text-xl">
+              {profile?.avatar_url ? 
+                (profile?.display_name?.slice(0, 2) || profile?.username?.slice(0, 2) || 'U') : 
+                (() => {
+                  const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
+                  const index = profile?.username ? profile.username.length % emojis.length : 0;
+                  return emojis[index];
+                })()
+              }
+            </AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
@@ -215,7 +267,7 @@ const Profile = () => {
               </Dialog>
             </div>
             <p className="text-lg font-medium text-foreground mb-1">{profile?.display_name || 'User'}</p>
-            <p className="text-muted-foreground">{user.email}</p>
+            {/* Email only visible to the user themselves */}
             <Button
               variant="ghost"
               size="sm"
@@ -324,7 +376,7 @@ const Profile = () => {
             onClick={() => setShowFollowers(true)}
           >
             <div className="text-center">
-              <p className="text-lg font-bold">1.2K</p>
+              <p className="text-lg font-bold">{followers.length}</p>
               <p className="text-xs text-muted-foreground">Followers</p>
             </div>
           </Button>
@@ -334,7 +386,7 @@ const Profile = () => {
             onClick={() => setShowFollowing(true)}
           >
             <div className="text-center">
-              <p className="text-lg font-bold">345</p>
+              <p className="text-lg font-bold">{following.length}</p>
               <p className="text-xs text-muted-foreground">Following</p>
             </div>
           </Button>
@@ -364,31 +416,38 @@ const Profile = () => {
       <div className="p-4">
         <h2 className="text-lg font-semibold mb-4 text-foreground">Recent Activity</h2>
         <div className="space-y-3">
-          {recentActivity.map((activity) => {
-            const Icon = activity.icon;
-            return (
-              <div 
-                key={activity.id} 
-                className="flex items-center gap-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-muted/50"
-                onClick={() => {
-                  if (activity.type === "sold") navigate('/my-listings');
-                  else if (activity.type === "favorite") navigate('/favorites');
-                  else if (activity.type === "message") navigate('/messages');
-                }}
-              >
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-primary" />
+          {recentActivity.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No recent activity</p>
+              <p className="text-sm">Start buying or selling to see your activity here</p>
+            </div>
+          ) : (
+            recentActivity.map((activity) => {
+              const Icon = activity.icon;
+              return (
+                <div 
+                  key={activity.id} 
+                  className="flex items-center gap-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-muted/50"
+                  onClick={() => {
+                    if (activity.type === "sold") navigate('/my-listings');
+                    else if (activity.type === "favorite") navigate('/favorites');
+                    else if (activity.type === "message") navigate('/messages');
+                  }}
+                >
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm text-foreground">{activity.item}</p>
+                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                  </div>
+                  {activity.amount && (
+                    <p className="font-bold text-primary">{activity.amount}</p>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm text-foreground">{activity.item}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
-                {activity.amount && (
-                  <p className="font-bold text-primary">{activity.amount}</p>
-                )}
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 

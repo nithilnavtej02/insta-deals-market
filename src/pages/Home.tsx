@@ -11,6 +11,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useLocation } from "@/hooks/useLocation";
 import { useShareProduct } from "@/hooks/useShareProduct";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -21,7 +22,6 @@ const Home = () => {
   const { location, updateLocation, getCurrentLocation } = useLocation();
   const { shareProduct } = useShareProduct();
   const [searchQuery, setSearchQuery] = useState("");
-  const [likedProducts, setLikedProducts] = useState<{ [key: string]: boolean }>({});
 
   // Get user's location on mount
   useEffect(() => {
@@ -44,11 +44,14 @@ const Home = () => {
     More: MoreHorizontal,
   };
 
-  const toggleLike = (productId: string) => {
-    setLikedProducts(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+
+  const toggleLike = async (productId: string) => {
+    if (isFavorite(productId)) {
+      await removeFromFavorites(productId);
+    } else {
+      await addToFavorites(productId);
+    }
   };
 
   return (
@@ -75,7 +78,14 @@ const Home = () => {
           
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Good morning!</h2>
+              <h2 className="text-xl font-semibold">
+                {(() => {
+                  const hour = new Date().getHours();
+                  if (hour < 12) return "Good morning!";
+                  if (hour < 17) return "Good afternoon!";
+                  return "Good evening!";
+                })()}
+              </h2>
               <p className="text-sm text-muted-foreground">{profile?.username || user?.email?.split('@')[0] || 'User'}</p>
             </div>
           </div>
@@ -106,16 +116,17 @@ const Home = () => {
           </Button>
         </div>
         <div className="grid grid-cols-4 gap-4">
-          {categories.slice(0, 4).map((category) => {
-            const IconComponent = categoryIcons[category.name as keyof typeof categoryIcons] || MoreHorizontal;
+          {categories.slice(0, 4).map((category, index) => {
+            const emojis = ['📱', '👔', '🚗', '🏠', '⚽', '🎮', '🎵', '📷', '🍼'];
+            const emoji = emojis[index] || '📦';
             return (
               <div
                 key={category.id}
                 className="flex flex-col items-center gap-2 cursor-pointer"
                 onClick={() => navigate(`/categories/${category.id}`)}
               >
-                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", category.color || "bg-gray-500")}>
-                  <IconComponent className="h-6 w-6 text-white" />
+                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", category.color || "bg-primary")}>
+                  <span className="text-2xl">{emoji}</span>
                 </div>
                 <span className="text-xs text-center text-muted-foreground">{category.name}</span>
               </div>
@@ -150,14 +161,14 @@ const Home = () => {
                     size="icon-sm"
                     className={cn(
                       "absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm",
-                      likedProducts[product.id] && "text-red-500"
+                      isFavorite(product.id) && "text-red-500"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleLike(product.id);
                     }}
                   >
-                    <Heart className={cn("h-4 w-4", likedProducts[product.id] && "fill-current")} />
+                    <Heart className={cn("h-4 w-4", isFavorite(product.id) && "fill-current")} />
                   </Button>
                 </div>
                 <div className="p-4">

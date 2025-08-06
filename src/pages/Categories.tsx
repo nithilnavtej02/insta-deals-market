@@ -44,7 +44,22 @@ const Categories = () => {
                 onClick={() => navigate(`/categories/${category.id}`)}
               >
                 <div className={cn("w-16 h-16 rounded-full flex items-center justify-center", category.color || "bg-primary")}>
-                  <span className="text-2xl">📱</span>
+                  <span className="text-2xl">
+                    {(() => {
+                      const emojis = {
+                        'Electronics': '📱',
+                        'Fashion': '👔',
+                        'Vehicles': '🚗',
+                        'Home & Garden': '🏠',
+                        'Sports': '⚽',
+                        'Gaming': '🎮',
+                        'Music': '🎵',
+                        'Photography': '📷',
+                        'Baby & Kids': '🍼'
+                      };
+                      return emojis[category.name as keyof typeof emojis] || '📦';
+                    })()}
+                  </span>
                 </div>
                 <div className="text-center">
                   <h3 className="font-medium text-sm">{category.name}</h3>

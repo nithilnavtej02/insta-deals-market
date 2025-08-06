@@ -171,8 +171,17 @@ const PublicProfile = () => {
       {/* Profile Header */}
       <div className="p-6 text-center">
         <Avatar className="w-24 h-24 mx-auto mb-4">
-          <AvatarImage src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`} />
-          <AvatarFallback>{profile.display_name?.slice(0, 2) || profile.username?.slice(0, 2) || 'U'}</AvatarFallback>
+          <AvatarImage src={profile.avatar_url} />
+          <AvatarFallback>
+            {profile.avatar_url ? 
+              (profile.display_name?.slice(0, 2) || profile.username?.slice(0, 2) || 'U') : 
+              (() => {
+                const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
+                const index = profile.username ? profile.username.length % emojis.length : 0;
+                return emojis[index];
+              })()
+            }
+          </AvatarFallback>
         </Avatar>
         
         <div className="flex items-center justify-center gap-2 mb-2">
