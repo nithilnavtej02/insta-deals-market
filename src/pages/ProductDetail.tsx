@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Heart, Share, MessageCircle, Phone, Video, Star, MapPin, Calendar, Shield } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Heart, Share2, Phone, Video, MessageCircle, MapPin, Shield, Star, Eye, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useNavigate, useParams } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import CallDialog from "@/components/CallDialog";
 import { useProducts } from "@/hooks/useProducts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
+import { useShareProduct } from "@/hooks/useShareProduct";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const ProductDetail = () => {
@@ -18,6 +21,7 @@ const ProductDetail = () => {
   const { fetchProductById } = useProducts();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
+  const { shareProduct } = useShareProduct();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCallDialog, setShowCallDialog] = useState(false);
@@ -120,7 +124,7 @@ const ProductDetail = () => {
             size="icon"
             onClick={() => navigate('/share')}
           >
-            <Share className="h-5 w-5" />
+            <Share2 className="h-5 w-5" />
           </Button>
         </div>
       </div>

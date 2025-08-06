@@ -66,6 +66,7 @@ const AppContent = () => {
         <Route path="/categories" element={user ? <Categories /> : <Navigate to="/auth" />} />
         <Route path="/categories/:categoryId" element={user ? <CategoryProducts /> : <Navigate to="/auth" />} />
         <Route path="/product/:id" element={user ? <ProductDetail /> : <Navigate to="/auth" />} />
+        <Route path="/cart" element={user ? <Cart /> : <Navigate to="/auth" />} />
         <Route path="/sell" element={user ? <Sell /> : <Navigate to="/auth" />} />
         <Route path="/reels" element={user ? <Reels /> : <Navigate to="/auth" />} />
         <Route path="/reel/:id/comments" element={user ? <ReelComments /> : <Navigate to="/auth" />} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export interface CartItem {
   id: string;
@@ -12,9 +13,11 @@ export interface CartItem {
     title: string;
     price: number;
     images: string[];
+    location: string;
     seller_id: string;
     profiles?: {
       username: string;
+      display_name: string;
     };
   };
 }
@@ -25,7 +28,11 @@ export function useCart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setCartItems([]);
+      setLoading(false);
+      return;
+    }
     fetchCartItems();
   }, [user]);
 
@@ -50,9 +57,11 @@ export function useCart() {
             title,
             price,
             images,
+            location,
             seller_id,
             profiles:seller_id (
-              username
+              username,
+              display_name
             )
           )
         `)
@@ -69,7 +78,10 @@ export function useCart() {
   };
 
   const addToCart = async (productId: string, quantity: number = 1) => {
-    if (!user) return { error: new Error('User not authenticated') };
+    if (!user) {
+      toast.error('Please sign in to add items to cart');
+      return { error: new Error('User not authenticated') };
+    }
 
     try {
       // Get user's profile ID
@@ -90,7 +102,7 @@ export function useCart() {
         .single();
 
       if (existingItem) {
-        // Update quantity if item already exists
+        // Update quantity
         const { data, error } = await supabase
           .from('cart_items')
           .update({ quantity: existingItem.quantity + quantity })
@@ -100,7 +112,7 @@ export function useCart() {
 
         if (error) throw error;
       } else {
-        // Insert new item
+        // Add new item
         const { data, error } = await supabase
           .from('cart_items')
           .insert({
@@ -113,22 +125,48 @@ export function useCart() {
 
         if (error) throw error;
       }
-      
+
       // Refresh cart
       fetchCartItems();
+      toast.success('Item added to cart');
       return { error: null };
     } catch (error) {
       console.error('Error adding to cart:', error);
+      toast.error('Failed to add item to cart');
+      return { error };
+    }
+  };
+
+  const removeFromCart = async (cartItemId: string) => {
+    if (!user) return { error: new Error('User not authenticated') };
+
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('id', cartItemId);
+
+      if (error) throw error;
+      
+      // Refresh cart
+      fetchCartItems();
+      toast.success('Item removed from cart');
+      return { error: null };
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      toast.error('Failed to remove item from cart');
       return { error };
     }
   };
 
   const updateQuantity = async (cartItemId: string, quantity: number) => {
-    if (quantity === 0) {
-      return removeFromCart(cartItemId);
-    }
+    if (!user) return { error: new Error('User not authenticated') };
 
     try {
+      if (quantity <= 0) {
+        return removeFromCart(cartItemId);
+      }
+
       const { error } = await supabase
         .from('cart_items')
         .update({ quantity })
@@ -140,25 +178,7 @@ export function useCart() {
       fetchCartItems();
       return { error: null };
     } catch (error) {
-      console.error('Error updating cart quantity:', error);
-      return { error };
-    }
-  };
-
-  const removeFromCart = async (cartItemId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', cartItemId);
-
-      if (error) throw error;
-      
-      // Refresh cart
-      fetchCartItems();
-      return { error: null };
-    } catch (error) {
-      console.error('Error removing from cart:', error);
+      console.error('Error updating quantity:', error);
       return { error };
     }
   };
@@ -183,22 +203,36 @@ export function useCart() {
 
       if (error) throw error;
       
-      // Refresh cart
-      fetchCartItems();
+      setCartItems([]);
+      toast.success('Cart cleared');
       return { error: null };
     } catch (error) {
       console.error('Error clearing cart:', error);
+      toast.error('Failed to clear cart');
       return { error };
     }
+  };
+
+  const getCartTotal = () => {
+    return cartItems.reduce((total, item) => {
+      const price = item.products?.price || 0;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const getCartItemCount = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   return {
     cartItems,
     loading,
     addToCart,
-    updateQuantity,
     removeFromCart,
+    updateQuantity,
     clearCart,
+    getCartTotal,
+    getCartItemCount,
     refreshCart: fetchCartItems
   };
 }

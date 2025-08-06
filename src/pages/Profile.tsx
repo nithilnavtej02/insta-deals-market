@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Package, Star, Settings, Shield, Bell, LogOut, Calendar, MapPin, X, Edit, User } from "lucide-react";
+import { Heart, MessageCircle, Package, Star, Settings, Shield, Bell, LogOut, Calendar, MapPin, X, Edit, User, ShoppingCart } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -157,6 +157,7 @@ const Profile = () => {
 
   const accountOptions = [
     { label: "My Listings", icon: Package, count: null },
+    { label: "Cart", icon: ShoppingCart, count: null },
     { label: "Favorites", icon: Heart, count: null },
     { label: "Notifications", icon: Bell, count: null },
     { label: "Privacy & Security", icon: Shield, count: null },
@@ -471,6 +472,8 @@ const Profile = () => {
                       navigate("/notifications");
                     } else if (option.label === "My Listings") {
                       navigate("/my-listings");
+                    } else if (option.label === "Cart") {
+                      navigate("/cart");
                     } else if (option.label === "Favorites") {
                       navigate("/favorites");
                     } else if (option.label === "Privacy & Security") {
