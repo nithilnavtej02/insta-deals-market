@@ -5,10 +5,12 @@ import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useReels } from "@/hooks/useReels";
+import { useSavedReels } from "@/hooks/useSavedReels";
 
 const Reels = () => {
   const navigate = useNavigate();
   const { reels: backendReels, loading, incrementLikes, decrementLikes, incrementViews } = useReels();
+  const { saveReel, unsaveReel, isSaved } = useSavedReels();
   
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -55,16 +57,12 @@ const Reels = () => {
     }
   };
 
-  const toggleSave = (reelId: string) => {
-    const currentState = reelStates[reelId];
-    if (!currentState) return;
-
-    const newStates = { ...reelStates };
-    newStates[reelId] = {
-      ...currentState,
-      isSaved: !currentState.isSaved
-    };
-    setReelStates(newStates);
+  const toggleSave = async (reelId: string) => {
+    if (isSaved(reelId)) {
+      await unsaveReel(reelId);
+    } else {
+      await saveReel(reelId);
+    }
   };
 
   return (
@@ -215,7 +213,7 @@ const Reels = () => {
                       <Bookmark 
                         className={cn(
                           "h-6 w-6 text-white",
-                          reelStates[reel.id]?.isSaved && 'fill-white'
+                          isSaved(reel.id) && 'fill-white'
                         )} 
                       />
                     </Button>
