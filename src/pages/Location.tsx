@@ -4,10 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Location = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const { updateLocation } = useCurrentLocation();
 
   const suggestedLocations = [
     { id: 1, name: "Mumbai, India", distance: "Current Location" },
@@ -23,22 +29,48 @@ const Location = () => {
     { id: 3, name: "Powai, Mumbai" },
   ];
 
-  const handleLocationSelect = (locationName: string) => {
-    // Update location and navigate back
-    navigate(-1);
+  const handleLocationSelect = async (locationName: string) => {
+    if (!user) return;
+    
+    try {
+      await updateLocation(locationName);
+      toast.success("Location updated successfully");
+      navigate(-1);
+    } catch (error) {
+      console.error('Error updating location:', error);
+      toast.error("Failed to update location");
+    }
   };
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Handle current location
-          handleLocationSelect("Current Location");
+        async (position) => {
+          try {
+            // Reverse geocode to get location name
+            const response = await fetch(
+              `https://api.opencagedata.com/geocode/v1/json?q=${position.coords.latitude}+${position.coords.longitude}&key=YOUR_API_KEY`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              const locationName = data.results[0]?.formatted || "Current Location";
+              handleLocationSelect(locationName);
+            } else {
+              handleLocationSelect("Current Location");
+            }
+          } catch (error) {
+            console.error("Error getting location name:", error);
+            handleLocationSelect("Current Location");
+          }
         },
         (error) => {
           console.error("Error getting location:", error);
+          toast.error("Unable to get current location");
         }
       );
+    } else {
+      toast.error("Geolocation is not supported by this browser");
     }
   };
 

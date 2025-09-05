@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 interface LocationData {
   latitude: number;
@@ -7,6 +9,7 @@ interface LocationData {
 }
 
 export function useCurrentLocation() {
+  const { user } = useAuth();
   const [location, setLocation] = useState<LocationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,38 @@ export function useCurrentLocation() {
     }
   };
 
+  const updateLocation = async (locationName: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      setLoading(true);
+      
+      // Get user's profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error('Profile not found');
+
+      // Update profile location
+      const { error } = await supabase
+        .from('profiles')
+        .update({ location: locationName })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      
+      setLocation(prev => prev ? { ...prev, address: locationName } : null);
+    } catch (error) {
+      console.error('Error updating location:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Load saved location on mount
     const savedLocation = localStorage.getItem('userCurrentLocation');
@@ -88,6 +123,7 @@ export function useCurrentLocation() {
     location,
     loading,
     error,
-    getCurrentLocation
+    getCurrentLocation,
+    updateLocation
   };
 }

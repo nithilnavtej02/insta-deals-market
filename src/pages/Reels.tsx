@@ -19,122 +19,13 @@ const Reels = () => {
     return num.toString();
   };
 
-  // Use backend reels if available, otherwise fallback to dummy data
-  const dummyReels = [
-    {
-      id: 1,
-      title: "Vintage Watch Collection",
-      description: "Check out this amazing vintage watch collection! Each piece tells a story of timeless craftsmanship...",
-      seller: "@vintage_collector",
-      price: "$150-$500",
-      likes: 1234,
-      comments: 145,
-      isLiked: false,
-      isSaved: false,
-      buyable: true,
-      image: "/lovable-uploads/7ca162be-1e79-409e-bfbf-704e1e3a247a.png"
-    },
-    {
-      id: 2,
-      title: "Sneaker Collection",
-      description: "Rare and limited edition sneakers in perfect condition. All authentic with original boxes...",
-      seller: "@sneaker_head",
-      price: "$200-$800",
-      likes: 3567,
-      comments: 289,
-      isLiked: true,
-      isSaved: false,
-      buyable: true,
-      image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png"
-    },
-    {
-      id: 3,
-      title: "Gaming Setup Tour",
-      description: "My complete gaming setup for sale! RGB lighting, mechanical keyboard, high-end monitor and more...",
-      seller: "@pro_gamer",
-      price: "$1200",
-      likes: 2600,
-      comments: 289,
-      isLiked: false,
-      isSaved: true,
-      buyable: true,
-      image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png"
-    },
-    {
-      id: 4,
-      title: "Designer Handbags",
-      description: "Authentic designer handbags in excellent condition. Comes with dust bags and certificates...",
-      seller: "@luxury_bags",
-      price: "$400-$2000",
-      likes: 2234,
-      comments: 178,
-      isLiked: false,
-      isSaved: false,
-      buyable: true,
-      image: "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg"
-    },
-    {
-      id: 5,
-      title: "iPhone 14 Pro Max",
-      description: "Latest iPhone in pristine condition with all original accessories and warranty...",
-      seller: "@tech_deals",
-      price: "$899",
-      likes: 8100,
-      comments: 567,
-      isLiked: true,
-      isSaved: false,
-      buyable: true,
-      image: "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg"
-    },
-    {
-      id: 6,
-      title: "Vintage Leather Jacket",
-      description: "Classic vintage leather jacket from the 80s. Perfect condition, rare find...",
-      seller: "@vintage_style",
-      price: "$150",
-      likes: 1500,
-      comments: 89,
-      isLiked: false,
-      isSaved: true,
-      buyable: true,
-      image: "https://images.pexels.com/photos/934841/pexels-photo-934841.jpeg"
-    },
-    {
-      id: 7,
-      title: "Art Collection Pieces",
-      description: "Beautiful handcrafted art pieces from local artists. Perfect for home decoration...",
-      seller: "@art_gallery",
-      price: "$200-$800",
-      likes: 3400,
-      comments: 156,
-      isLiked: true,
-      isSaved: true,
-      buyable: true,
-      image: "https://images.pexels.com/photos/1568607/pexels-photo-1568607.jpeg"
-    },
-    {
-      id: 8,
-      title: "Professional Camera Gear",
-      description: "Complete photography setup with lenses, tripods, and accessories. Perfect for professionals...",
-      seller: "@photo_pro",
-      price: "$1,800",
-      likes: 4200,
-      comments: 298,
-      isLiked: false,
-      isSaved: false,
-      buyable: true,
-      image: "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg"
-    }
-  ];
-
-  const reels = backendReels.length > 0 ? backendReels : dummyReels;
 
   const [reelStates, setReelStates] = useState<{ [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } }>({});
 
   useEffect(() => {
     // Initialize reel states
     const initialStates: { [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } } = {};
-    reels.forEach(reel => {
+    backendReels.forEach(reel => {
       initialStates[reel.id] = {
         isLiked: false,
         isSaved: false,
@@ -142,7 +33,7 @@ const Reels = () => {
       };
     });
     setReelStates(initialStates);
-  }, [reels]);
+  }, [backendReels]);
 
   const toggleLike = (reelId: string) => {
     const currentState = reelStates[reelId];
@@ -195,7 +86,15 @@ const Reels = () => {
               scrollBehavior: 'smooth'
             }}
           >
-            {reels.map((reel, index) => (
+            {backendReels.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-white">
+                <div className="text-center">
+                  <p className="text-lg mb-2">No reels available</p>
+                  <p className="text-gray-400">Check back later for new content!</p>
+                </div>
+              </div>
+            ) : (
+              backendReels.map((reel, index) => (
               <div 
                 key={reel.id} 
                 className="relative snap-start px-3 py-2"
@@ -204,7 +103,7 @@ const Reels = () => {
                 <div className="relative h-full w-full rounded-2xl overflow-hidden bg-gray-800">
                   {/* Background Image */}
                   <img
-                    src={reel.image}
+                    src={reel.thumbnail_url}
                     alt={reel.title}
                     className="w-full h-full object-cover"
                   />
@@ -221,7 +120,7 @@ const Reels = () => {
                   </div>
 
                   {/* Buy Button - Top Right */}
-                  {(reel.buy_link || reel.buyable) && (
+                  {reel.buy_link && (
                     <Button
                       className="absolute top-5 right-5 bg-primary/95 hover:bg-primary text-white px-3 py-2 rounded-full flex items-center gap-2 shadow-lg"
                       size="sm"
@@ -246,13 +145,9 @@ const Reels = () => {
                       {reel.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <p 
-                        className="text-sm font-medium text-primary cursor-pointer hover:underline"
-                        onClick={() => navigate(`/profile/${reel.seller.slice(1)}`)}
-                      >
-                        {reel.seller}
+                      <p className="text-sm font-medium text-primary">
+                        Admin Reel
                       </p>
-                      <p className="text-base font-bold text-white">{reel.price}</p>
                     </div>
                   </div>
 
@@ -296,7 +191,7 @@ const Reels = () => {
                         <MessageCircle className="h-6 w-6 text-white" />
                       </Button>
                       <span className="text-white text-xs font-semibold">
-                        {formatNumber(reel.comments)}
+                        {formatNumber(reel.comments || 0)}
                       </span>
                     </div>
 
@@ -327,7 +222,8 @@ const Reels = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

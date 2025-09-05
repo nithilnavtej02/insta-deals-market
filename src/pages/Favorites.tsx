@@ -23,35 +23,6 @@ const Favorites = () => {
     );
   }
 
-  const dummyFavorites = [
-    {
-      id: 1,
-      title: "Vintage Watch Collection",
-      price: "$150-$500",
-      location: "New York, NY",
-      seller: "@vintage_collector",
-      image: "/lovable-uploads/7ca162be-1e79-409e-bfbf-704e1e3a247a.png",
-      addedDate: "2 days ago"
-    },
-    {
-      id: 2,
-      title: "Designer Handbag",
-      price: "$400",
-      location: "Los Angeles, CA",
-      seller: "@luxury_bags",
-      image: "/lovable-uploads/627bffbc-e89a-448f-b60e-ea64469766cc.png",
-      addedDate: "1 week ago"
-    },
-    {
-      id: 3,
-      title: "Professional Camera",
-      price: "$800",
-      location: "Chicago, IL",
-      seller: "@photo_pro",
-      image: "/lovable-uploads/a86d1bac-83d4-497e-a7d5-021edd3da1c7.png",
-      addedDate: "3 days ago"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,20 +54,20 @@ const Favorites = () => {
 
       {/* Favorites Grid */}
       <div className="p-4">
-        {(favorites.length === 0 && !loading) ? (
+        {favorites.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No favorites yet. Start exploring products!
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
-            {(favorites.length > 0 ? favorites : dummyFavorites).map((item) => (
+            {favorites.map((item) => (
             <Card key={item.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/product/${item.id}`)}>
+                  onClick={() => navigate(`/product/${item.product_id}`)}>
               <CardContent className="p-0">
                 <div className="relative">
                   <img
-                    src={item.image}
-                    alt={item.title}
+                    src={item.products?.images?.[0] || "/placeholder.svg"}
+                    alt={item.products?.title}
                     className="w-full h-32 object-cover"
                   />
                   <Button
@@ -105,21 +76,21 @@ const Favorites = () => {
                     className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeFromFavorites(item.product_id || item.id);
+                      removeFromFavorites(item.product_id);
                     }}
                   >
                     <Heart className="h-4 w-4 fill-red-500 text-red-500" />
                   </Button>
                 </div>
                 <div className="p-3">
-                  <h3 className="font-medium text-sm mb-1 line-clamp-2">{item.title}</h3>
-                  <p className="text-lg font-bold text-primary mb-2">{item.price}</p>
+                  <h3 className="font-medium text-sm mb-1 line-clamp-2">{item.products?.title}</h3>
+                  <p className="text-lg font-bold text-primary mb-2">${item.products?.price}</p>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                     <MapPin className="h-3 w-3" />
-                    {item.location}
+                    {item.products?.location}
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-primary">{item.seller || item.profiles?.username || 'Unknown'}</p>
+                    <p className="text-xs text-primary">@{item.products?.profiles?.username || 'Unknown'}</p>
                     <Button variant="ghost" size="sm" className="h-6 px-2">
                       <MessageCircle className="h-3 w-3" />
                     </Button>
