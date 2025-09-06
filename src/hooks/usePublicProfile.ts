@@ -43,36 +43,17 @@ export function usePublicProfile(profileId?: string) {
     try {
       setError(null);
       
-      // Select only non-sensitive fields for public viewing
+      // Use the secure function to get only public profile data
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          username,
-          display_name,
-          bio,
-          avatar_url,
-          location,
-          verified,
-          items_sold,
-          rating,
-          total_reviews,
-          followers_count,
-          following_count,
-          created_at,
-          updated_at
-        `)
-        .eq('id', profileId)
-        .maybeSingle();
+        .rpc('get_public_profile', { profile_user_id: profileId });
 
       if (error) throw error;
       
-      if (!data) {
+      if (!data || data.length === 0) {
         setError('Profile not found');
         setProfile(null);
       } else {
-        setProfile(data);
+        setProfile(data[0]); // RPC returns an array, get the first item
       }
     } catch (error) {
       console.error('Error fetching public profile:', error);
