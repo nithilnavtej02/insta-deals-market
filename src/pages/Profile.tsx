@@ -32,6 +32,9 @@ const Profile = () => {
     username: '',
     display_name: ''
   });
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   useEffect(() => {
     if (profile) {
@@ -99,10 +102,6 @@ const Profile = () => {
       </div>
     );
   }
-  
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   useEffect(() => {
     if (profile) {
