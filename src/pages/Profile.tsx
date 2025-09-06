@@ -36,6 +36,49 @@ const Profile = () => {
   const [following, setFollowing] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
+  const fetchFollowers = async () => {
+    if (!profile) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*, profiles:follower_id(*)')
+        .eq('following_id', profile.id);
+      
+      if (error) throw error;
+      setFollowers(data || []);
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    if (!profile) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*, profiles:following_id(*)')
+        .eq('follower_id', profile.id);
+      
+      if (error) throw error;
+      setFollowing(data || []);
+    } catch (error) {
+      console.error('Error fetching following:', error);
+    }
+  };
+
+  const fetchRecentActivity = async () => {
+    if (!profile) return;
+    
+    try {
+      // This would be a more complex query combining orders, favorites, messages
+      setRecentActivity([]); // For now, empty until we implement activity tracking
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
+
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -45,6 +88,14 @@ const Profile = () => {
         username: profile.username || '',
         display_name: profile.display_name || ''
       });
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchFollowers();
+      fetchFollowing();
+      fetchRecentActivity();
     }
   }, [profile]);
 
@@ -102,57 +153,6 @@ const Profile = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (profile) {
-      fetchFollowers();
-      fetchFollowing();
-      fetchRecentActivity();
-    }
-  }, [profile]);
-
-  const fetchFollowers = async () => {
-    if (!profile) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('follows')
-        .select('*, profiles:follower_id(*)')
-        .eq('following_id', profile.id);
-      
-      if (error) throw error;
-      setFollowers(data || []);
-    } catch (error) {
-      console.error('Error fetching followers:', error);
-    }
-  };
-
-  const fetchFollowing = async () => {
-    if (!profile) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('follows')
-        .select('*, profiles:following_id(*)')
-        .eq('follower_id', profile.id);
-      
-      if (error) throw error;
-      setFollowing(data || []);
-    } catch (error) {
-      console.error('Error fetching following:', error);
-    }
-  };
-
-  const fetchRecentActivity = async () => {
-    if (!profile) return;
-    
-    try {
-      // This would be a more complex query combining orders, favorites, messages
-      setRecentActivity([]); // For now, empty until we implement activity tracking
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
-    }
-  };
 
   const accountOptions = [
     { label: "My Listings", icon: Package, count: null },
