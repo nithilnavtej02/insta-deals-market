@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { UserProfile } from "@/hooks/useProfile";
+import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -16,16 +16,14 @@ const PublicProfile = () => {
   const { profileId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { profile, loading, error } = usePublicProfile(profileId);
   const [products, setProducts] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
 
   useEffect(() => {
     if (profileId) {
-      fetchProfile();
       fetchProducts();
       fetchReviews();
       checkFollowStatus();
@@ -33,20 +31,7 @@ const PublicProfile = () => {
   }, [profileId]);
 
   const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profileId)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
+    // This is now handled by the usePublicProfile hook
   };
 
   const fetchProducts = async () => {
@@ -144,15 +129,22 @@ const PublicProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">Loading profile...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
-  if (!profile) {
+  if (error || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">Profile not found</div>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Profile not found</h2>
+          <p className="text-muted-foreground mb-4">{error || 'The profile you are looking for does not exist.'}</p>
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
       </div>
     );
   }

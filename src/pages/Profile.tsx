@@ -55,7 +55,16 @@ const Profile = () => {
       try {
         const { data, error } = await supabase
           .from('follows')
-          .select('*, profiles:follower_id(*)')
+          .select(`
+            *,
+            profiles!follows_follower_id_fkey(
+              id,
+              username,
+              display_name,
+              avatar_url,
+              verified
+            )
+          `)
           .eq('following_id', profile.id);
         
         if (error) throw error;
@@ -69,7 +78,16 @@ const Profile = () => {
       try {
         const { data, error } = await supabase
           .from('follows')
-          .select('*, profiles:following_id(*)')
+          .select(`
+            *,
+            profiles!follows_following_id_fkey(
+              id,
+              username,
+              display_name,
+              avatar_url,
+              verified
+            )
+          `)
           .eq('follower_id', profile.id);
         
         if (error) throw error;
