@@ -13,6 +13,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
+import { sanitizeInput, validateFileUpload } from "@/utils/security";
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -39,17 +40,49 @@ const Sell = () => {
   const conditions = ["New", "Like New", "Good", "Fair"];
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Sanitize input to prevent XSS attacks
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setImages(prev => [...prev, ...files].slice(0, 5)); // Max 5 images
+    
+    // Validate each file before adding
+    const validFiles: File[] = [];
+    for (const file of files) {
+      const validation = validateFileUpload(file, {
+        maxSize: 5 * 1024 * 1024, // 5MB limit
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+      });
+      
+      if (validation.isValid) {
+        validFiles.push(file);
+      } else {
+        toast.error(`${file.name}: ${validation.error}`);
+      }
+    }
+    
+    setImages(prev => [...prev, ...validFiles].slice(0, 5)); // Max 5 images
   };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) setVideo(file);
+    if (file) {
+      // Validate video file
+      const validation = validateFileUpload(file, {
+        maxSize: 50 * 1024 * 1024, // 50MB limit for video
+        allowedTypes: ['video/mp4', 'video/webm', 'video/ogg'],
+        allowedExtensions: ['.mp4', '.webm', '.ogg']
+      });
+      
+      if (validation.isValid) {
+        setVideo(file);
+      } else {
+        toast.error(`Video upload failed: ${validation.error}`);
+      }
+    }
   };
 
   const removeImage = (index: number) => {

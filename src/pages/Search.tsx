@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNavigation from "@/components/BottomNavigation";
+import { sanitizeInput, globalRateLimiter } from "@/utils/security";
 
 interface SearchResult {
   id: string;
@@ -23,26 +24,40 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (query.trim()) {
-      searchUsers(query);
+    const sanitizedQuery = sanitizeInput(query);
+    
+    if (sanitizedQuery.trim() && sanitizedQuery.length >= 2) {
+      // Rate limiting: max 10 requests per minute
+      if (globalRateLimiter.canMakeRequest('search', 10, 60000)) {
+        const timeoutId = setTimeout(() => {
+          searchUsers(sanitizedQuery);
+        }, 300); // Debounce for 300ms
+        
+        return () => clearTimeout(timeoutId);
+      }
     } else {
       setResults([]);
     }
   }, [query]);
 
   const searchUsers = async (searchQuery: string) => {
+    // Input validation and rate limiting
+    if (searchQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+
     setLoading(true);
     try {
+      // Use the secure search function instead of direct table access
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, verified, followers_count')
-        .ilike('username', `%${searchQuery}%`)
-        .limit(20);
+        .rpc('search_users_securely', { search_query: searchQuery });
 
       if (error) throw error;
       setResults(data || []);
     } catch (error) {
       console.error('Error searching users:', error);
+      setResults([]);
     } finally {
       setLoading(false);
     }

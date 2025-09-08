@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { validatePassword, sanitizeInput } from "@/utils/security";
 
 const CreateAccount = () => {
   const navigate = useNavigate();
@@ -32,7 +33,9 @@ const CreateAccount = () => {
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Sanitize input to prevent XSS
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     
     // Trigger validation for username, email, phone
     if (field === 'username' || field === 'email' || field === 'phone') {
@@ -96,8 +99,10 @@ const CreateAccount = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    // Enhanced password validation
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.errors[0]); // Show first error
       return;
     }
 
@@ -210,28 +215,44 @@ const CreateAccount = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              className="h-12 pr-12"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a strong password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  className="h-12 pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {formData.password && (
+                <div className="text-xs space-y-1">
+                  {validatePassword(formData.password).errors.map((error, index) => (
+                    <div key={index} className="text-red-500 flex items-center gap-1">
+                      <X className="h-3 w-3" />
+                      {error}
+                    </div>
+                  ))}
+                  {validatePassword(formData.password).isValid && (
+                    <div className="text-green-500 flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      Password meets security requirements
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>

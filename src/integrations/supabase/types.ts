@@ -682,6 +682,17 @@ export type Database = {
           verified: boolean
         }[]
       }
+      search_users_securely: {
+        Args: { search_query: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          followers_count: number
+          id: string
+          username: string
+          verified: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
