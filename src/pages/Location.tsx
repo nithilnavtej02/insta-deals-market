@@ -47,14 +47,14 @@ const Location = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // Reverse geocode to get location name
+            // Use BigDataCloud reverse geocoding API (free)
             const response = await fetch(
-              `https://api.opencagedata.com/geocode/v1/json?q=${position.coords.latitude}+${position.coords.longitude}&key=YOUR_API_KEY`
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
             );
             
             if (response.ok) {
               const data = await response.json();
-              const locationName = data.results[0]?.formatted || "Current Location";
+              const locationName = data.city || data.locality || data.principalSubdivision || "Current Location";
               handleLocationSelect(locationName);
             } else {
               handleLocationSelect("Current Location");

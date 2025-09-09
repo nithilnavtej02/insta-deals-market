@@ -81,7 +81,7 @@ const PublicProfile = () => {
         .from('follows')
         .select('id')
         .eq('follower_id', userProfile.id)
-        .eq('following_id', profileId)
+        .eq('following_id', profile?.id)
         .single();
 
       if (!error && data) {
@@ -278,7 +278,37 @@ const PublicProfile = () => {
             >
               {isFollowing ? "Following" : "Follow"}
             </Button>
-            <Button variant="outline" size="icon" onClick={() => navigate(`/chat/${conversationId}`)}>
+            <Button variant="outline" size="icon" onClick={async () => {
+              if (conversationId) {
+                navigate(`/chat/${conversationId}`);
+              } else {
+                // Create conversation and navigate
+                try {
+                  const { data: userProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single();
+
+                  if (userProfile && profile) {
+                    const { data: newConv, error } = await supabase
+                      .from('conversations')
+                      .insert({
+                        participant_1: userProfile.id,
+                        participant_2: profile.id
+                      })
+                      .select('id')
+                      .single();
+
+                    if (!error && newConv) {
+                      navigate(`/chat/${newConv.id}`);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error creating conversation:', error);
+                }
+              }
+            }}>
               <MessageCircle className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="icon">

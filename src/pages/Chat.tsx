@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone, Video, Send } from "lucide-react";
+import { ArrowLeft, Phone, Video, Send, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,7 +7,8 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useMessages, type Message } from "@/hooks/useMessages";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { UserPresence } from "@/components/UserPresence";
 import CallDialog from "@/components/CallDialog";
 
 const Chat = () => {
@@ -189,10 +190,12 @@ const Chat = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${otherUser.username}`)}>
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={otherUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.username}`} />
-                <AvatarFallback>{otherUser.username?.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <UserPresence userId={otherUser.user_id}>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={otherUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.username}`} />
+                  <AvatarFallback>{otherUser.username?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </UserPresence>
               <div>
                 <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username}</h2>
                 <p className="text-xs text-primary">@{otherUser.username}</p>
