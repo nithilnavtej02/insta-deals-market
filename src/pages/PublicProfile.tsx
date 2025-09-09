@@ -21,12 +21,14 @@ const PublicProfile = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (profileId) {
       fetchProducts();
       fetchReviews();
       checkFollowStatus();
+      setupConversation();
     }
   }, [profileId]);
 
@@ -87,6 +89,47 @@ const PublicProfile = () => {
       }
     } catch (error) {
       console.error('Error checking follow status:', error);
+    }
+  };
+
+  const setupConversation = async () => {
+    if (!user || !profileId) return;
+
+    try {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!userProfile) return;
+
+      // Check if conversation exists
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${userProfile.id},participant_2.eq.${profileId}),and(participant_1.eq.${profileId},participant_2.eq.${userProfile.id})`)
+        .single();
+
+      if (existingConv) {
+        setConversationId(existingConv.id);
+      } else {
+        // Create new conversation
+        const { data: newConv, error } = await supabase
+          .from('conversations')
+          .insert({
+            participant_1: userProfile.id,
+            participant_2: profileId
+          })
+          .select('id')
+          .single();
+
+        if (!error && newConv) {
+          setConversationId(newConv.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error setting up conversation:', error);
     }
   };
 
@@ -226,7 +269,7 @@ const PublicProfile = () => {
         </div>
 
         {/* Action Buttons */}
-        {user && profileId !== profile.id && (
+        {user && profileId !== profile.user_id && (
           <div className="flex gap-3 justify-center">
             <Button 
               onClick={handleFollow}
@@ -235,7 +278,7 @@ const PublicProfile = () => {
             >
               {isFollowing ? "Following" : "Follow"}
             </Button>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" onClick={() => navigate(`/chat/${conversationId}`)}>
               <MessageCircle className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="icon">
