@@ -189,7 +189,7 @@ const Chat = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${otherUser.username}`)}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/u/${otherUser.username}`)}>
               <UserPresence userId={otherUser.user_id}>
                 <Avatar className="w-10 h-10">
                   <AvatarImage src={otherUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.username}`} />

@@ -20,6 +20,17 @@ export function useLocation() {
     }
   }, [realLocation]);
 
+  // Auto-update location every 10 minutes when mounted
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (navigator.geolocation) {
+        getRealLocation();
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+
+    return () => clearInterval(interval);
+  }, [getRealLocation]);
+
   const updateLocation = (newLocation: string) => {
     setLocation(newLocation);
     localStorage.setItem('userLocation', newLocation);

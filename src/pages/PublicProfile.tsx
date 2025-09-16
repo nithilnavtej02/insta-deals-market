@@ -13,10 +13,11 @@ import { useAuth } from "@/hooks/useAuth";
 import BottomNavigation from "@/components/BottomNavigation";
 
 const PublicProfile = () => {
-  const { profileId } = useParams();
+  const { profileId, username } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, loading, error } = usePublicProfile(profileId);
+  const [actualProfileId, setActualProfileId] = useState<string | null>(profileId || null);
+  const { profile, loading, error } = usePublicProfile(actualProfileId);
   const [products, setProducts] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -24,13 +25,36 @@ const PublicProfile = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profileId) {
+    const resolveProfile = async () => {
+      if (username && !profileId) {
+        // Route like /u/username - resolve username to profile ID
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
+          
+          if (data && !error) {
+            setActualProfileId(data.id);
+          }
+        } catch (error) {
+          console.error('Error resolving username to profile ID:', error);
+        }
+      }
+    };
+    
+    resolveProfile();
+  }, [username, profileId]);
+
+  useEffect(() => {
+    if (actualProfileId) {
       fetchProducts();
       fetchReviews();
       checkFollowStatus();
       setupConversation();
     }
-  }, [profileId]);
+  }, [actualProfileId]);
 
   const fetchProfile = async () => {
     // This is now handled by the usePublicProfile hook
@@ -41,7 +65,7 @@ const PublicProfile = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('seller_id', profileId)
+        .eq('seller_id', actualProfileId)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -56,7 +80,7 @@ const PublicProfile = () => {
       const { data, error } = await supabase
         .from('reviews')
         .select('*, profiles:reviewer_id(*)')
-        .eq('reviewed_id', profileId);
+        .eq('reviewed_id', actualProfileId);
 
       if (error) throw error;
       setReviews(data || []);
@@ -93,7 +117,7 @@ const PublicProfile = () => {
   };
 
   const setupConversation = async () => {
-    if (!user || !profileId) return;
+    if (!user || !actualProfileId) return;
 
     try {
       const { data: userProfile } = await supabase
@@ -108,7 +132,7 @@ const PublicProfile = () => {
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
-        .or(`and(participant_1.eq.${userProfile.id},participant_2.eq.${profileId}),and(participant_1.eq.${profileId},participant_2.eq.${userProfile.id})`)
+        .or(`and(participant_1.eq.${userProfile.id},participant_2.eq.${actualProfileId}),and(participant_1.eq.${actualProfileId},participant_2.eq.${userProfile.id})`)
         .single();
 
       if (existingConv) {
@@ -119,7 +143,7 @@ const PublicProfile = () => {
           .from('conversations')
           .insert({
             participant_1: userProfile.id,
-            participant_2: profileId
+            participant_2: actualProfileId
           })
           .select('id')
           .single();
@@ -153,14 +177,14 @@ const PublicProfile = () => {
           .from('follows')
           .delete()
           .eq('follower_id', userProfile.id)
-          .eq('following_id', profileId);
+          .eq('following_id', actualProfileId);
         setIsFollowing(false);
       } else {
         await supabase
           .from('follows')
           .insert({
             follower_id: userProfile.id,
-            following_id: profileId
+            following_id: actualProfileId
           });
         setIsFollowing(true);
       }
@@ -269,7 +293,7 @@ const PublicProfile = () => {
         </div>
 
         {/* Action Buttons */}
-        {user && profileId !== profile.user_id && (
+        {user && actualProfileId !== profile.user_id && (
           <div className="flex gap-3 justify-center">
             <Button 
               onClick={handleFollow}

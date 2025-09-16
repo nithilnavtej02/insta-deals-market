@@ -6,11 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useReels } from "@/hooks/useReels";
 import { useSavedReels } from "@/hooks/useSavedReels";
+import { useReelsLikes } from "@/hooks/useReelsLikes";
 
 const Reels = () => {
   const navigate = useNavigate();
-  const { reels: backendReels, loading, incrementLikes, decrementLikes, incrementViews } = useReels();
+  const { reels: backendReels, loading, incrementViews } = useReels();
   const { saveReel, unsaveReel, isSaved } = useSavedReels();
+  const { isLiked, toggleLike } = useReelsLikes();
   
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -22,40 +24,6 @@ const Reels = () => {
   };
 
 
-  const [reelStates, setReelStates] = useState<{ [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } }>({});
-
-  useEffect(() => {
-    // Initialize reel states
-    const initialStates: { [key: string]: { isLiked: boolean; isSaved: boolean; likes: number } } = {};
-    backendReels.forEach(reel => {
-      initialStates[reel.id] = {
-        isLiked: false,
-        isSaved: false,
-        likes: reel.likes || 0
-      };
-    });
-    setReelStates(initialStates);
-  }, [backendReels]);
-
-  const toggleLike = (reelId: string) => {
-    const currentState = reelStates[reelId];
-    if (!currentState) return;
-
-    const newStates = { ...reelStates };
-    newStates[reelId] = {
-      ...currentState,
-      isLiked: !currentState.isLiked,
-      likes: currentState.isLiked ? currentState.likes - 1 : currentState.likes + 1
-    };
-    setReelStates(newStates);
-
-    // Update backend
-    if (currentState.isLiked) {
-      decrementLikes(reelId);
-    } else {
-      incrementLikes(reelId);
-    }
-  };
 
   const toggleSave = async (reelId: string) => {
     if (isSaved(reelId)) {
@@ -158,7 +126,7 @@ const Reels = () => {
                         size="icon"
                         className={cn(
                           "w-11 h-11 rounded-full backdrop-blur-sm border-0",
-                          reelStates[reel.id]?.isLiked
+                          isLiked(reel.id)
                             ? 'bg-red-500/30' 
                             : 'bg-white/20 hover:bg-white/30'
                         )}
@@ -167,14 +135,14 @@ const Reels = () => {
                         <Heart 
                           className={cn(
                             "h-6 w-6",
-                            reelStates[reel.id]?.isLiked 
+                            isLiked(reel.id) 
                               ? 'fill-red-500 text-red-500' 
                               : 'text-white'
                           )} 
                         />
                       </Button>
                       <span className="text-white text-xs font-semibold">
-                        {formatNumber(reelStates[reel.id]?.likes || reel.likes || 0)}
+                        {formatNumber(reel.likes || 0)}
                       </span>
                     </div>
 

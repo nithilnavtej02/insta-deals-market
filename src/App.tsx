@@ -70,9 +70,10 @@ const AppContent = () => {
         <Route path="/sell" element={user ? <Sell /> : <Navigate to="/auth" />} />
         <Route path="/reels" element={user ? <Reels /> : <Navigate to="/auth" />} />
         <Route path="/reel/:id/comments" element={user ? <ReelComments /> : <Navigate to="/auth" />} />
-        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
+         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
          <Route path="/profile/:profileId" element={user ? <PublicProfile /> : <Navigate to="/auth" />} />
          <Route path="/seller/:username" element={user ? <SellerProfile /> : <Navigate to="/auth" />} />
+         <Route path="/u/:username" element={user ? <PublicProfile /> : <Navigate to="/auth" />} />
         <Route path="/my-listings" element={user ? <MyListings /> : <Navigate to="/auth" />} />
         <Route path="/favorites" element={user ? <Favorites /> : <Navigate to="/auth" />} />
         <Route path="/saved" element={user ? <Saved /> : <Navigate to="/auth" />} />
