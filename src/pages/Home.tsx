@@ -181,13 +181,22 @@ const Home = () => {
                         {product.seller_id} • ⭐ {4.5}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          shareProduct(product.id, product.title);
+                          if (navigator.share) {
+                            navigator.share({
+                              title: product.title,
+                              text: `Check out this ${product.title} for $${product.price}`,
+                              url: `${window.location.origin}/product/${product.id}`
+                            });
+                          } else {
+                            navigator.clipboard.writeText(`${window.location.origin}/product/${product.id}`);
+                            alert('Link copied to clipboard!');
+                          }
                         }}
                       >
                         <Share2 className="h-4 w-4" />

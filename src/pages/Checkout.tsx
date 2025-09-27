@@ -1,36 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, CreditCard, Truck, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
+import { useProducts } from "@/hooks/useProducts";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { cartItems, getCartTotal } = useCart();
+  const { fetchProductById } = useProducts();
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [isOrdered, setIsOrdered] = useState(false);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const orderItems = [
-    {
-      id: 1,
-      title: "iPhone 14 Pro Max",
-      price: 899,
-      quantity: 1,
-      seller: "tech_deals"
-    },
-    {
-      id: 2,
-      title: "Gaming Chair",
-      price: 299,
-      quantity: 2,
-      seller: "gamer_pro"
+  useEffect(() => {
+    loadOrderData();
+  }, []);
+
+  const loadOrderData = async () => {
+    const productId = searchParams.get('product');
+    
+    if (productId) {
+      // Single product purchase
+      const product = await fetchProductById(productId);
+      if (product) {
+        setOrderItems([{
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          quantity: 1,
+          seller: product.profiles?.username || 'Unknown Seller'
+        }]);
+      }
+    } else if (cartItems.length > 0) {
+      // Cart checkout
+      const items = cartItems.map(item => ({
+        id: item.product_id,
+        title: item.products?.title || 'Unknown Product',
+        price: item.products?.price || 0,
+        quantity: item.quantity,
+        seller: item.products?.profiles?.username || 'Unknown Seller'
+      }));
+      setOrderItems(items);
+    } else {
+      // No items to checkout
+      navigate('/cart');
+      return;
     }
-  ];
+    
+    setLoading(false);
+  };
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = 15;
+  const shipping = subtotal > 100 ? 0 : 15; // Free shipping over $100
   const tax = Math.round(subtotal * 0.08);
   const total = subtotal + shipping + tax;
 
@@ -40,6 +68,17 @@ const Checkout = () => {
       navigate('/home');
     }, 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isOrdered) {
     return (

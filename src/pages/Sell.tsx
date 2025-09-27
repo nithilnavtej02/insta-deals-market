@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
-import { MapPin, Camera, Upload, X, Video, ChevronLeft } from "lucide-react";
+import { MapPin, Camera, Upload, X, Video, ChevronLeft, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +35,11 @@ const Sell = () => {
   });
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
+  const [reelData, setReelData] = useState({
+    title: "",
+    description: "",
+    buyLink: ""
+  });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -157,8 +163,15 @@ const Sell = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
-        {/* Media Upload */}
+      <div className="p-4">
+        <Tabs defaultValue="product" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="product">Sell Product</TabsTrigger>
+            <TabsTrigger value="reel">Upload Reel</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="product" className="space-y-6">
+            {/* Media Upload */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Photos & Video</h2>
           
@@ -398,15 +411,114 @@ const Sell = () => {
           </div>
         </div>
 
-        <Button
-          variant="reown"
-          size="lg"
-          className="w-full"
-          onClick={handlePublish}
-          disabled={loading}
-        >
-          {loading ? "Publishing..." : "Publish Listing"}
-        </Button>
+            <Button
+              variant="reown"
+              size="lg"
+              className="w-full"
+              onClick={handlePublish}
+              disabled={loading}
+            >
+              {loading ? "Publishing..." : "Publish Listing"}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="reel" className="space-y-6">
+            {/* Reel Upload */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Upload Reel</h2>
+              
+              {/* Video Upload for Reel */}
+              <div>
+                <Label>Video *</Label>
+                {video ? (
+                  <div className="relative mt-2">
+                    <video
+                      src={URL.createObjectURL(video)}
+                      className="w-full h-64 object-cover rounded-lg"
+                      controls
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                      onClick={removeVideo}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Card 
+                    className="mt-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => videoInputRef.current?.click()}
+                  >
+                    <CardContent className="flex items-center justify-center p-12">
+                      <div className="text-center">
+                        <Film className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-lg text-muted-foreground mb-2">Upload your reel video</p>
+                        <p className="text-sm text-muted-foreground">Max 60 seconds, MP4 format recommended</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Reel Title */}
+              <div className="space-y-2">
+                <Label htmlFor="reelTitle">Reel Title *</Label>
+                <Input
+                  id="reelTitle"
+                  type="text"
+                  placeholder="Give your reel a catchy title"
+                  value={reelData.title}
+                  onChange={(e) => setReelData(prev => ({ ...prev, title: e.target.value }))}
+                  className="h-12"
+                />
+              </div>
+
+              {/* Reel Description */}
+              <div className="space-y-2">
+                <Label htmlFor="reelDescription">Description</Label>
+                <Textarea
+                  id="reelDescription"
+                  placeholder="Describe your reel..."
+                  value={reelData.description}
+                  onChange={(e) => setReelData(prev => ({ ...prev, description: e.target.value }))}
+                  className="min-h-24 resize-none"
+                />
+              </div>
+
+              {/* Buy Link */}
+              <div className="space-y-2">
+                <Label htmlFor="buyLink">Buy Link (Optional)</Label>
+                <Input
+                  id="buyLink"
+                  type="url"
+                  placeholder="https://example.com/product"
+                  value={reelData.buyLink}
+                  onChange={(e) => setReelData(prev => ({ ...prev, buyLink: e.target.value }))}
+                  className="h-12"
+                />
+              </div>
+
+              <Button
+                variant="reown"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  if (!video || !reelData.title) {
+                    toast.error("Please add a video and title for your reel");
+                    return;
+                  }
+                  toast.success("Reel uploaded successfully!");
+                  navigate("/reels");
+                }}
+                disabled={loading}
+              >
+                {loading ? "Uploading..." : "Upload Reel"}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <BottomNavigation />

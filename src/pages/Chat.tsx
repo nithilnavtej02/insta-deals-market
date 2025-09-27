@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone, Video, Send, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, Send, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMessages, type Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
 import { UserPresence } from "@/components/UserPresence";
-import CallDialog from "@/components/CallDialog";
+
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -20,8 +20,6 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
-  const [showCallDialog, setShowCallDialog] = useState(false);
-  const [callType, setCallType] = useState<"voice" | "video">("voice");
   const [loading, setLoading] = useState(true);
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -202,28 +200,6 @@ const Chat = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => {
-                setCallType("voice");
-                setShowCallDialog(true);
-              }}
-            >
-              <Phone className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => {
-                setCallType("video");
-                setShowCallDialog(true);
-              }}
-            >
-              <Video className="h-5 w-5" />
-            </Button>
-          </div>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -259,15 +235,6 @@ const Chat = () => {
         </div>
       </div>
       
-      <CallDialog
-        isOpen={showCallDialog}
-        onClose={() => setShowCallDialog(false)}
-        type={callType}
-        contact={{
-          name: otherUser.display_name || otherUser.username,
-          username: `@${otherUser.username}`
-        }}
-      />
     </div>
   );
 };

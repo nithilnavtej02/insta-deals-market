@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Heart, Share2, Phone, Video, MessageCircle, MapPin, Shield, Star, Eye, Truck } from "lucide-react";
+import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import CallDialog from "@/components/CallDialog";
 import { useProducts } from "@/hooks/useProducts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
-import { useShareProduct } from "@/hooks/useShareProduct";
+import { useFollows } from "@/hooks/useFollows";
+import { useMessages } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,11 +21,10 @@ const ProductDetail = () => {
   const { fetchProductById } = useProducts();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
-  const { shareProduct } = useShareProduct();
+  const { isFollowing, followUser, unfollowUser } = useFollows();
+  const { sendMessage } = useMessages();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showCallDialog, setShowCallDialog] = useState(false);
-  const [callType, setCallType] = useState<"voice" | "video">("voice");
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -94,9 +93,38 @@ const ProductDetail = () => {
     );
   }
 
-  const handleCall = (type: "voice" | "video") => {
-    setCallType(type);
-    setShowCallDialog(true);
+  const handleChat = async () => {
+    if (!product?.profiles?.username) return;
+    
+    try {
+      const { data: receiverProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', product.profiles.username)
+        .single();
+
+      if (receiverProfile) {
+        const result = await sendMessage(receiverProfile.id, `Hi! I'm interested in your ${product.title}.`);
+        if (result.error) {
+          toast.error('Failed to start conversation');
+        } else {
+          navigate(`/chat/${receiverProfile.id}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast.error('Failed to start conversation');
+    }
+  };
+
+  const handleFollow = () => {
+    if (!product?.seller_id) return;
+    
+    if (isFollowing(product.seller_id)) {
+      unfollowUser(product.seller_id);
+    } else {
+      followUser(product.seller_id);
+    }
   };
 
   return (
@@ -122,7 +150,18 @@ const ProductDetail = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/share')}
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: product.title,
+                  text: `Check out this ${product.title} for $${product.price}`,
+                  url: window.location.href
+                });
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success('Link copied to clipboard!');
+              }
+            }}
           >
             <Share2 className="h-5 w-5" />
           </Button>
@@ -240,43 +279,45 @@ const ProductDetail = () => {
                 </div>
               </div>
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto"
-                onClick={() => navigate(`/profile/${product.seller_id}`)}
-              >
-                View Profile
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/profile/${product.profiles?.id}`)}
+                >
+                  View Profile
+                </Button>
+                <Button
+                  variant={isFollowing(product.seller_id) ? "secondary" : "default"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleFollow}
+                >
+                  {isFollowing(product.seller_id) ? (
+                    <>
+                      <UserMinus className="h-4 w-4 mr-2" />
+                      Unfollow
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
-            {/* Contact Buttons */}
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => navigate(`/chat/${product.profiles?.username}`)}
-              >
-                <MessageCircle className="h-4 w-4" />
-                Chat
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => handleCall("voice")}
-              >
-                <Phone className="h-4 w-4" />
-                Call
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => handleCall("video")}
-              >
-                <Video className="h-4 w-4" />
-                Video
-              </Button>
-            </div>
+            {/* Contact Button */}
+            <Button
+              variant="outline"
+              className="w-full flex items-center gap-2"
+              onClick={handleChat}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Chat with Seller
+            </Button>
           </CardContent>
         </Card>
 
@@ -303,22 +344,12 @@ const ProductDetail = () => {
           <Button variant="outline" size="lg" onClick={handleAddToCart}>
             Add to Cart
           </Button>
-          <Button size="lg" onClick={() => navigate('/checkout')}>
+          <Button size="lg" onClick={() => navigate(`/checkout?product=${product.id}`)}>
             Buy Now
           </Button>
         </div>
       </div>
 
-      {/* Call Dialog */}
-      <CallDialog
-        isOpen={showCallDialog}
-        onClose={() => setShowCallDialog(false)}
-        type={callType}
-        contact={{
-          name: product.profiles?.display_name || 'Seller',
-          username: product.profiles?.username || 'seller'
-        }}
-      />
     </div>
   );
 };
