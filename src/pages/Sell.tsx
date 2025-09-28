@@ -13,6 +13,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useLocation } from "@/hooks/useLocation";
+import { useReelUpload } from "@/hooks/useReelUpload";
 import { toast } from "sonner";
 import { sanitizeInput, validateFileUpload } from "@/utils/security";
 
@@ -23,6 +24,7 @@ const Sell = () => {
   const { createProduct } = useProducts();
   const { categories } = useCategories();
   const { location: userLocation } = useLocation();
+  const { uploadReel, uploading: reelUploading } = useReelUpload();
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -144,6 +146,18 @@ const Sell = () => {
       toast.error("An error occurred while creating the listing");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReelUpload = async () => {
+    if (!video || !reelData.title) {
+      toast.error("Please add a video and title for your reel");
+      return;
+    }
+
+    const result = await uploadReel(video, reelData);
+    if (!result.error) {
+      navigate("/reels");
     }
   };
 
@@ -493,10 +507,9 @@ const Sell = () => {
                 <Input
                   id="buyLink"
                   type="url"
-                  placeholder="https://example.com/product"
+                  placeholder="https://your-product-link.com"
                   value={reelData.buyLink}
                   onChange={(e) => setReelData(prev => ({ ...prev, buyLink: e.target.value }))}
-                  className="h-12"
                 />
               </div>
 
@@ -504,17 +517,10 @@ const Sell = () => {
                 variant="reown"
                 size="lg"
                 className="w-full"
-                onClick={() => {
-                  if (!video || !reelData.title) {
-                    toast.error("Please add a video and title for your reel");
-                    return;
-                  }
-                  toast.success("Reel uploaded successfully!");
-                  navigate("/reels");
-                }}
-                disabled={loading}
+                onClick={handleReelUpload}
+                disabled={reelUploading || !video || !reelData.title}
               >
-                {loading ? "Uploading..." : "Upload Reel"}
+                {reelUploading ? "Uploading Reel..." : "Upload Reel"}
               </Button>
             </div>
           </TabsContent>

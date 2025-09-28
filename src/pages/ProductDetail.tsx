@@ -14,6 +14,7 @@ import { useFollows } from "@/hooks/useFollows";
 import { useMessages } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ShareDialog from "@/components/ShareDialog";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const ProductDetail = () => {
   const { sendMessage } = useMessages();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -62,7 +64,7 @@ const ProductDetail = () => {
   const handleAddToCart = async () => {
     if (!product) return;
     
-    const { error } = await addToCart(product.id);
+    const { error } = await addToCart(product.id, 1);
     if (error) {
       toast.error('Failed to add to cart');
     } else {
@@ -94,27 +96,10 @@ const ProductDetail = () => {
   }
 
   const handleChat = async () => {
-    if (!product?.profiles?.username) return;
+    if (!product?.seller_id) return;
     
-    try {
-      const { data: receiverProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', product.profiles.username)
-        .single();
-
-      if (receiverProfile) {
-        const result = await sendMessage(receiverProfile.id, `Hi! I'm interested in your ${product.title}.`);
-        if (result.error) {
-          toast.error('Failed to start conversation');
-        } else {
-          navigate(`/chat/${receiverProfile.id}`);
-        }
-      }
-    } catch (error) {
-      console.error('Error starting chat:', error);
-      toast.error('Failed to start conversation');
-    }
+    navigate('/messages');
+    toast.success('Opening messages...');
   };
 
   const handleFollow = () => {
@@ -150,18 +135,7 @@ const ProductDetail = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: product.title,
-                  text: `Check out this ${product.title} for $${product.price}`,
-                  url: window.location.href
-                });
-              } else {
-                navigator.clipboard.writeText(window.location.href);
-                toast.success('Link copied to clipboard!');
-              }
-            }}
+            onClick={() => setShowShareDialog(true)}
           >
             <Share2 className="h-5 w-5" />
           </Button>
@@ -349,6 +323,15 @@ const ProductDetail = () => {
           </Button>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        title={product.title}
+        url={window.location.href}
+        text={`Check out this ${product.title} for $${product.price}`}
+      />
 
     </div>
   );

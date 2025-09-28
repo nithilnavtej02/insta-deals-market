@@ -12,6 +12,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useLocation } from "@/hooks/useLocation";
 import { useShareProduct } from "@/hooks/useShareProduct";
 import { useFavorites } from "@/hooks/useFavorites";
+import ShareDialog from "@/components/ShareDialog";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const Home = () => {
   const { location, updateLocation, getCurrentLocation } = useLocation();
   const { shareProduct } = useShareProduct();
   const [searchQuery, setSearchQuery] = useState("");
+  const [shareDialog, setShareDialog] = useState<{isOpen: boolean, product: any}>({isOpen: false, product: null});
 
   // Get user's location on mount
   useEffect(() => {
@@ -187,16 +189,7 @@ const Home = () => {
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (navigator.share) {
-                            navigator.share({
-                              title: product.title,
-                              text: `Check out this ${product.title} for $${product.price}`,
-                              url: `${window.location.origin}/product/${product.id}`
-                            });
-                          } else {
-                            navigator.clipboard.writeText(`${window.location.origin}/product/${product.id}`);
-                            alert('Link copied to clipboard!');
-                          }
+                          setShareDialog({isOpen: true, product});
                         }}
                       >
                         <Share2 className="h-4 w-4" />
@@ -213,6 +206,17 @@ const Home = () => {
           )}
         </div>
       </div>
+
+      {/* Share Dialog */}
+      {shareDialog.product && (
+        <ShareDialog
+          isOpen={shareDialog.isOpen}
+          onClose={() => setShareDialog({isOpen: false, product: null})}
+          title={shareDialog.product.title}
+          url={`${window.location.origin}/product/${shareDialog.product.id}`}
+          text={`Check out this ${shareDialog.product.title} for $${shareDialog.product.price}`}
+        />
+      )}
 
       <BottomNavigation />
     </div>

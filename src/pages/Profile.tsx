@@ -389,7 +389,7 @@ const Profile = () => {
             onClick={() => setShowFollowers(true)}
           >
             <div className="text-center">
-              <p className="text-lg font-bold">{followers.length}</p>
+              <p className="text-lg font-bold">{profile?.followers_count || 0}</p>
               <p className="text-xs text-muted-foreground">Followers</p>
             </div>
           </Button>
@@ -399,7 +399,7 @@ const Profile = () => {
             onClick={() => setShowFollowing(true)}
           >
             <div className="text-center">
-              <p className="text-lg font-bold">{following.length}</p>
+              <p className="text-lg font-bold">{profile?.following_count || 0}</p>
               <p className="text-xs text-muted-foreground">Following</p>
             </div>
           </Button>
