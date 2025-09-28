@@ -522,34 +522,45 @@ const Profile = () => {
             <DialogTitle>Followers (1.2K)</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {followers.map((user) => (
-              <div key={user.id} className="flex items-center gap-3">
+            {followers.map((follower) => (
+              <div key={follower.id} className="flex items-center gap-3">
                 <Avatar 
                   className="w-10 h-10 cursor-pointer"
                   onClick={() => {
                     setShowFollowers(false);
-                    navigate(`/seller/${user.username.slice(1)}`);
+                    if (follower.profiles?.username) {
+                      navigate(`/seller/${follower.profiles.username}`);
+                    }
                   }}
                 >
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback>{user.username.slice(1, 3).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={follower.profiles?.avatar_url} />
+                  <AvatarFallback>
+                    {follower.profiles?.display_name ? 
+                      follower.profiles.display_name.slice(0, 2).toUpperCase() : 
+                      follower.profiles?.username ? 
+                        follower.profiles.username.slice(0, 2).toUpperCase() : 
+                        'U'
+                    }
+                  </AvatarFallback>
                 </Avatar>
                 <div 
                   className="flex-1 cursor-pointer"
                   onClick={() => {
                     setShowFollowers(false);
-                    navigate(`/seller/${user.username.slice(1)}`);
+                    if (follower.profiles?.username) {
+                      navigate(`/seller/${follower.profiles.username}`);
+                    }
                   }}
                 >
-                  <p className="font-medium text-foreground">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.username}</p>
+                  <p className="font-medium text-foreground">{follower.profiles?.display_name || follower.profiles?.username || 'User'}</p>
+                  <p className="text-sm text-muted-foreground">@{follower.profiles?.username || 'user'}</p>
                 </div>
                 <Button 
-                  variant={user.isFollowing ? "outline" : "default"} 
+                  variant="outline" 
                   size="sm"
                   className="h-8"
                 >
-                  {user.isFollowing ? "Following" : "Follow"}
+                  Remove
                 </Button>
               </div>
             ))}
@@ -564,27 +575,38 @@ const Profile = () => {
             <DialogTitle>Following (345)</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {following.map((user) => (
-              <div key={user.id} className="flex items-center gap-3">
+            {following.map((follow) => (
+              <div key={follow.id} className="flex items-center gap-3">
                 <Avatar 
                   className="w-10 h-10 cursor-pointer"
                   onClick={() => {
                     setShowFollowing(false);
-                    navigate(`/seller/${user.username.slice(1)}`);
+                    if (follow.profiles?.username) {
+                      navigate(`/seller/${follow.profiles.username}`);
+                    }
                   }}
                 >
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback>{user.username.slice(1, 3).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={follow.profiles?.avatar_url} />
+                  <AvatarFallback>
+                    {follow.profiles?.display_name ? 
+                      follow.profiles.display_name.slice(0, 2).toUpperCase() : 
+                      follow.profiles?.username ? 
+                        follow.profiles.username.slice(0, 2).toUpperCase() : 
+                        'U'
+                    }
+                  </AvatarFallback>
                 </Avatar>
                 <div 
                   className="flex-1 cursor-pointer"
                   onClick={() => {
                     setShowFollowing(false);
-                    navigate(`/seller/${user.username.slice(1)}`);
+                    if (follow.profiles?.username) {
+                      navigate(`/seller/${follow.profiles.username}`);
+                    }
                   }}
                 >
-                  <p className="font-medium text-foreground">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.username}</p>
+                  <p className="font-medium text-foreground">{follow.profiles?.display_name || follow.profiles?.username || 'User'}</p>
+                  <p className="text-sm text-muted-foreground">@{follow.profiles?.username || 'user'}</p>
                 </div>
                 <Button variant="outline" size="sm" className="h-8">
                   Following
