@@ -221,7 +221,8 @@ const Profile = () => {
             <AvatarImage src={profile?.avatar_url} />
             <AvatarFallback className="bg-primary text-white text-xl">
               {profile?.avatar_url ? 
-                (profile?.display_name?.slice(0, 2) || profile?.username?.slice(0, 2) || 'U') : 
+                ((profile?.display_name && profile.display_name.slice(0, 2)) || 
+                 (profile?.username && profile.username.slice(0, 2)) || 'U') : 
                 (() => {
                   const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
                   const index = profile?.username ? profile.username.length % emojis.length : 0;
