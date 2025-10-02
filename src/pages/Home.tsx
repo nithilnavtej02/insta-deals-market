@@ -163,14 +163,14 @@ const Home = () => {
                     size="icon-sm"
                     className={cn(
                       "absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm",
-                      isFavorite(product.id) && "text-red-500"
+                      isFavorite(product.id) && "text-red-500 hover:text-red-600"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleLike(product.id);
                     }}
                   >
-                    <Heart className={cn("h-4 w-4", isFavorite(product.id) && "fill-current")} />
+                    <Heart className={cn("h-4 w-4", isFavorite(product.id) && "fill-red-500")} />
                   </Button>
                 </div>
                 <div className="p-4">

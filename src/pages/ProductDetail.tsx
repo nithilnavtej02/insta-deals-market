@@ -64,11 +64,17 @@ const ProductDetail = () => {
   const handleAddToCart = async () => {
     if (!product) return;
     
-    const { error } = await addToCart(product.id, 1);
-    if (error) {
+    try {
+      await addToCart(product.id, 1);
+      toast.success('✓ Item added to your cart!', {
+        description: 'Go to cart to complete your purchase',
+        action: {
+          label: 'View Cart',
+          onClick: () => navigate('/cart')
+        }
+      });
+    } catch (error) {
       toast.error('Failed to add to cart');
-    } else {
-      toast.success('Added to cart');
     }
   };
 
@@ -243,7 +249,7 @@ const ProductDetail = () => {
                       </Dialog>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">@{product.profiles?.username}</p>
+                  <p className="text-sm text-muted-foreground">@{product.profiles?.username || 'user'}</p>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
@@ -258,7 +264,7 @@ const ProductDetail = () => {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => navigate(`/profile/${product.profiles?.id}`)}
+                  onClick={() => navigate(`/seller/${product.profiles?.user_id}`)}
                 >
                   View Profile
                 </Button>

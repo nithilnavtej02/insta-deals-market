@@ -37,6 +37,7 @@ const Sell = () => {
   });
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
+  const [reelVideo, setReelVideo] = useState<File | null>(null);
   const [reelData, setReelData] = useState({
     title: "",
     description: "",
@@ -44,6 +45,7 @@ const Sell = () => {
   });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const reelVideoInputRef = useRef<HTMLInputElement>(null);
 
   const conditions = ["New", "Like New", "Good", "Fair"];
 
@@ -149,14 +151,38 @@ const Sell = () => {
     }
   };
 
+  const handleReelVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const validation = validateFileUpload(file, {
+        maxSize: 100 * 1024 * 1024, // 100MB limit for reel
+        allowedTypes: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'],
+        allowedExtensions: ['.mp4', '.webm', '.ogg', '.mov']
+      });
+      
+      if (validation.isValid) {
+        setReelVideo(file);
+        toast.success("Video selected successfully!");
+      } else {
+        toast.error(`Video upload failed: ${validation.error}`);
+      }
+    }
+  };
+
+  const removeReelVideo = () => {
+    setReelVideo(null);
+  };
+
   const handleReelUpload = async () => {
-    if (!video || !reelData.title) {
+    if (!reelVideo || !reelData.title) {
       toast.error("Please add a video and title for your reel");
       return;
     }
 
-    const result = await uploadReel(video, reelData);
+    const result = await uploadReel(reelVideo, reelData);
     if (!result.error) {
+      setReelVideo(null);
+      setReelData({ title: "", description: "", buyLink: "" });
       navigate("/reels");
     }
   };
@@ -444,10 +470,10 @@ const Sell = () => {
               {/* Video Upload for Reel */}
               <div>
                 <Label>Video *</Label>
-                {video ? (
+                {reelVideo ? (
                   <div className="relative mt-2">
                     <video
-                      src={URL.createObjectURL(video)}
+                      src={URL.createObjectURL(reelVideo)}
                       className="w-full h-64 object-cover rounded-lg"
                       controls
                     />
@@ -455,7 +481,7 @@ const Sell = () => {
                       variant="ghost"
                       size="icon"
                       className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
-                      onClick={removeVideo}
+                      onClick={removeReelVideo}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -463,17 +489,25 @@ const Sell = () => {
                 ) : (
                   <Card 
                     className="mt-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => videoInputRef.current?.click()}
+                    onClick={() => reelVideoInputRef.current?.click()}
                   >
                     <CardContent className="flex items-center justify-center p-12">
                       <div className="text-center">
                         <Film className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-lg text-muted-foreground mb-2">Upload your reel video</p>
-                        <p className="text-sm text-muted-foreground">Max 60 seconds, MP4 format recommended</p>
+                        <p className="text-sm text-muted-foreground">Tap to select video from your device</p>
                       </div>
                     </CardContent>
                   </Card>
                 )}
+                
+                <input
+                  ref={reelVideoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleReelVideoUpload}
+                  className="hidden"
+                />
               </div>
 
               {/* Reel Title */}
