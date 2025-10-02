@@ -552,7 +552,7 @@ const Sell = () => {
                 size="lg"
                 className="w-full"
                 onClick={handleReelUpload}
-                disabled={reelUploading || !video || !reelData.title}
+                disabled={reelUploading || !reelVideo || !reelData.title}
               >
                 {reelUploading ? "Uploading Reel..." : "Upload Reel"}
               </Button>
