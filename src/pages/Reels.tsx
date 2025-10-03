@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Heart, MessageCircle, Share, Bookmark, Play, Pause, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,8 @@ const Reels = () => {
   const { reels: backendReels, loading, incrementViews } = useReels();
   const { saveReel, unsaveReel, isSaved } = useSavedReels();
   const { isLiked, toggleLike } = useReelsLikes();
+  const [playingReelId, setPlayingReelId] = useState<string | null>(null);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -30,6 +32,27 @@ const Reels = () => {
       await unsaveReel(reelId);
     } else {
       await saveReel(reelId);
+    }
+  };
+
+  const togglePlay = async (reelId: string) => {
+    const video = videoRefs.current[reelId];
+    if (!video) return;
+
+    if (playingReelId === reelId) {
+      video.pause();
+      setPlayingReelId(null);
+    } else {
+      // Pause all other videos
+      Object.entries(videoRefs.current).forEach(([id, v]) => {
+        if (v && id !== reelId) {
+          v.pause();
+        }
+      });
+      
+      await video.play();
+      setPlayingReelId(reelId);
+      incrementViews(reelId);
     }
   };
 
@@ -67,23 +90,53 @@ const Reels = () => {
                 style={{ height: '75vh' }}
               >
                 <div className="relative h-full w-full rounded-2xl overflow-hidden bg-gray-800">
-                  {/* Background Image */}
-                  <img
-                    src={reel.thumbnail_url}
-                    alt={reel.title}
-                    className="w-full h-full object-cover"
-                  />
-                  
-                  {/* Play Button */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80"
-                    >
-                      <Play className="h-8 w-8 text-white fill-white" />
-                    </Button>
-                  </div>
+                  {/* Video Player */}
+                  {reel.video_url ? (
+                    <>
+                      <video
+                        ref={(el) => (videoRefs.current[reel.id] = el)}
+                        src={reel.video_url}
+                        poster={reel.thumbnail_url}
+                        className="w-full h-full object-cover"
+                        loop
+                        playsInline
+                        onClick={() => togglePlay(reel.id)}
+                      />
+                      
+                      {/* Play/Pause Button Overlay */}
+                      {playingReelId !== reel.id && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80"
+                            onClick={() => togglePlay(reel.id)}
+                          >
+                            <Play className="h-8 w-8 text-white fill-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Fallback to thumbnail if no video */}
+                      <img
+                        src={reel.thumbnail_url}
+                        alt={reel.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80"
+                          disabled
+                        >
+                          <Play className="h-8 w-8 text-white fill-white" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
 
                   {/* Buy Button - Top Right */}
                   {reel.buy_link && (

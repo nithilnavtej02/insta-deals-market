@@ -703,6 +703,14 @@ export type Database = {
           verified: boolean
         }[]
       }
+      notify_reel_admin: {
+        Args: {
+          interaction_type: string
+          reel_uuid: string
+          user_profile_id: string
+        }
+        Returns: undefined
+      }
       search_users_securely: {
         Args: { search_query: string }
         Returns: {
