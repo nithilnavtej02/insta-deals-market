@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useReels } from "@/hooks/useReels";
 import { useSavedReels } from "@/hooks/useSavedReels";
 import { useReelsLikes } from "@/hooks/useReelsLikes";
+import ShareDialog from "@/components/ShareDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const Reels = () => {
   const navigate = useNavigate();
@@ -15,7 +17,30 @@ const Reels = () => {
   const { isLiked, toggleLike } = useReelsLikes();
   const [playingReelId, setPlayingReelId] = useState<string | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const [shareDialog, setShareDialog] = useState<{isOpen: boolean, reel: any}>({isOpen: false, reel: null});
+  const [reelUploaders, setReelUploaders] = useState<{[key: string]: any}>({});
   
+  // Fetch uploader profiles for reels
+  useEffect(() => {
+    const fetchUploaders = async () => {
+      if (backendReels.length === 0) return;
+      
+      const adminIds = [...new Set(backendReels.map(r => r.admin_id))];
+      const { data } = await supabase
+        .rpc('get_profiles_basic_by_ids', { ids: adminIds });
+      
+      if (data) {
+        const uploaderMap: {[key: string]: any} = {};
+        data.forEach((profile: any) => {
+          uploaderMap[profile.id] = profile;
+        });
+        setReelUploaders(uploaderMap);
+      }
+    };
+    
+    fetchUploaders();
+  }, [backendReels]);
+
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -163,11 +188,17 @@ const Reels = () => {
                     <p className="text-sm text-gray-300 mb-2.5 line-clamp-2 leading-5">
                       {reel.description}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-primary">
-                        Admin Reel
+                    {reelUploaders[reel.admin_id] && (
+                      <p 
+                        className="text-sm font-medium text-primary cursor-pointer hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${reel.admin_id}`);
+                        }}
+                      >
+                        @{reelUploaders[reel.admin_id].username || 'Unknown'}
                       </p>
-                    </div>
+                    )}
                   </div>
 
                   {/* Action Bar - Right Side */}
@@ -219,7 +250,7 @@ const Reels = () => {
                       variant="ghost"
                       size="icon"
                       className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                      onClick={() => navigate('/share')}
+                      onClick={() => setShareDialog({isOpen: true, reel})}
                     >
                       <Share className="h-6 w-6 text-white" />
                     </Button>
@@ -246,6 +277,17 @@ const Reels = () => {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      {shareDialog.reel && (
+        <ShareDialog
+          isOpen={shareDialog.isOpen}
+          onClose={() => setShareDialog({isOpen: false, reel: null})}
+          title={shareDialog.reel.title}
+          url={`${window.location.origin}/reels?id=${shareDialog.reel.id}`}
+          text={shareDialog.reel.description || `Check out this amazing reel!`}
+        />
+      )}
 
       <BottomNavigation />
     </div>

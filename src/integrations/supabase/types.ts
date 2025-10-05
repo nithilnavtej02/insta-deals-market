@@ -518,6 +518,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reel_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          reel_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          reel_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          reel_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_reel_comments_reel"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_reel_comments_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reel_likes: {
         Row: {
           created_at: string
@@ -683,6 +725,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_profiles_basic_by_ids: {
+        Args: { ids: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_public_profile: {
         Args: { profile_user_id: string }
         Returns: {
