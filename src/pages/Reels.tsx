@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Share, Bookmark, Play, Pause, ShoppingBag } from "lucide-react";
+import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useReels } from "@/hooks/useReels";
 import { useSavedReels } from "@/hooks/useSavedReels";
 import { useReelsLikes } from "@/hooks/useReelsLikes";
-import ShareDialog from "@/components/ShareDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const Reels = () => {
@@ -17,7 +16,7 @@ const Reels = () => {
   const { isLiked, toggleLike } = useReelsLikes();
   const [playingReelId, setPlayingReelId] = useState<string | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
-  const [shareDialog, setShareDialog] = useState<{isOpen: boolean, reel: any}>({isOpen: false, reel: null});
+  const [shareSheet, setShareSheet] = useState<{isOpen: boolean, reel: any}>({isOpen: false, reel: null});
   const [reelUploaders, setReelUploaders] = useState<{[key: string]: any}>({});
   
   // Fetch uploader profiles for reels
@@ -193,7 +192,7 @@ const Reels = () => {
                         className="text-sm font-medium text-white cursor-pointer hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/profile/${reel.admin_id}`);
+                          navigate(`/profile/${reelUploaders[reel.admin_id].user_id}`);
                         }}
                       >
                         @{reelUploaders[reel.admin_id].username || 'Unknown'}
@@ -250,7 +249,7 @@ const Reels = () => {
                       variant="ghost"
                       size="icon"
                       className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                      onClick={() => setShareDialog({isOpen: true, reel})}
+                      onClick={() => setShareSheet({isOpen: true, reel})}
                     >
                       <Share className="h-6 w-6 text-white" />
                     </Button>
@@ -278,15 +277,60 @@ const Reels = () => {
         </div>
       </div>
 
-      {/* Share Dialog */}
-      {shareDialog.reel && (
-        <ShareDialog
-          isOpen={shareDialog.isOpen}
-          onClose={() => setShareDialog({isOpen: false, reel: null})}
-          title={shareDialog.reel.title}
-          url={`${window.location.origin}/reels?id=${shareDialog.reel.id}`}
-          text={shareDialog.reel.description || `Check out this amazing reel!`}
-        />
+      {/* Share Sheet */}
+      {shareSheet.isOpen && shareSheet.reel && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+          <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground">Share to</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShareSheet({isOpen: false, reel: null})}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { name: "WhatsApp", icon: "💬", color: "bg-green-500", action: () => {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
+                  }},
+                  { name: "Instagram", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500", action: () => {
+                    window.open(`https://www.instagram.com/?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                  }},
+                  { name: "TikTok", icon: "🎵", color: "bg-black", action: () => {
+                    window.open(`https://www.tiktok.com/share?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                  }},
+                  { name: "X (Twitter)", icon: "🐦", color: "bg-black", action: () => {
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title}`)}`, '_blank');
+                  }},
+                  { name: "LinkedIn", icon: "💼", color: "bg-blue-600", action: () => {
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                  }},
+                  { name: "Snapchat", icon: "👻", color: "bg-yellow-400", action: () => {
+                    window.open(`https://www.snapchat.com/share?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                  }},
+                  { name: "Facebook", icon: "👥", color: "bg-blue-500", action: () => {
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                  }},
+                  { name: "Copy Link", icon: "🔗", color: "bg-gray-500", action: () => {
+                    navigator.clipboard.writeText(`${window.location.origin}/reels?id=${shareSheet.reel.id}`);
+                    alert("Link copied to clipboard!");
+                  }},
+                ].map((option) => (
+                  <button
+                    key={option.name}
+                    onClick={option.action}
+                    className="flex flex-col items-center gap-2 p-3 hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <div className={`w-12 h-12 rounded-full ${option.color} flex items-center justify-center text-white text-xl`}>
+                      {option.icon}
+                    </div>
+                    <span className="text-xs font-medium text-center text-foreground">{option.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <BottomNavigation />
