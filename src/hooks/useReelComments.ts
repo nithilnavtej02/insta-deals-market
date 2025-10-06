@@ -12,9 +12,10 @@ export interface ReelComment {
   created_at: string;
   profile?: {
     id: string;
-    username: string;
-    display_name: string;
-    avatar_url: string;
+    user_id: string;
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -33,30 +34,18 @@ export function useReelComments(reelId: string) {
     try {
       const { data, error } = await supabase
         .from('reel_comments')
-        .select('*')
+        .select('*, profiles:user_id(id, user_id, username, display_name, avatar_url)')
         .eq('reel_id', reelId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Fetch profiles for all commenters
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(c => c.user_id))];
-        const { data: profiles } = await supabase
-          .rpc('get_profiles_basic_by_ids', { ids: userIds });
-
-        const commentsWithProfiles = data.map(comment => ({
-          ...comment,
-          profile: profiles?.find((p: any) => p.id === comment.user_id)
-        }));
-
-        setComments(commentsWithProfiles);
-      } else {
-        setComments([]);
-      }
+      
+      setComments((data as any[]).map(comment => ({
+        ...comment,
+        profile: comment.profiles
+      })) || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
-      toast.error('Failed to load comments');
     } finally {
       setLoading(false);
     }
@@ -64,12 +53,11 @@ export function useReelComments(reelId: string) {
 
   const addComment = async (content: string, parentId?: string) => {
     if (!user) {
-      toast.error('Please login to comment');
+      toast.error('Please sign in to comment');
       return { error: new Error('Not authenticated') };
     }
 
     try {
-      // Get user profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
@@ -78,20 +66,22 @@ export function useReelComments(reelId: string) {
 
       if (!profile) throw new Error('Profile not found');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reel_comments')
         .insert({
           reel_id: reelId,
           user_id: profile.id,
-          content: content.trim(),
+          content,
           parent_id: parentId || null
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast.success('Comment added');
       fetchComments();
-      return { error: null };
+      return { data, error: null };
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');

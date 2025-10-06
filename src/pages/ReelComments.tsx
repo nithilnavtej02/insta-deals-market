@@ -5,18 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useParams } from "react-router-dom";
 import { useReelComments } from "@/hooks/useReelComments";
-import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
+import { formatDistanceToNow } from "date-fns";
 
 const ReelComments = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { profile } = useProfile();
+  const { user } = useAuth();
   const { comments, loading, addComment } = useReelComments(id || '');
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const handleSendComment = async () => {
-    if (newComment.trim() && id) {
+    if (newComment.trim()) {
       await addComment(newComment, replyingTo || undefined);
       setNewComment("");
       setReplyingTo(null);
@@ -45,9 +46,9 @@ const ReelComments = () => {
           comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-3">
               <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarImage src={comment.profile?.avatar_url} />
+                <AvatarImage src={comment.profile?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {comment.profile?.display_name?.slice(0, 2) || comment.profile?.username?.slice(0, 2) || 'U'}
+                  {comment.profile?.username?.slice(0, 2).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               
@@ -55,7 +56,7 @@ const ReelComments = () => {
                 <div className="bg-muted rounded-lg p-3">
                   <p 
                     className="font-medium text-sm text-primary mb-1 cursor-pointer hover:underline"
-                    onClick={() => navigate(`/profile/${comment.user_id}`)}
+                    onClick={() => navigate(`/profile/${comment.profile?.id}`)}
                   >
                     @{comment.profile?.username || 'Unknown'}
                   </p>
@@ -64,7 +65,7 @@ const ReelComments = () => {
                 
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-xs text-muted-foreground">
-                    {new Date(comment.created_at).toLocaleDateString()}
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                   </span>
                   <Button 
                     variant="ghost" 
@@ -104,33 +105,29 @@ const ReelComments = () => {
       </div>
 
       {/* Comment Input */}
-      <div className="bg-background border-t p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback>
-              {profile?.display_name?.slice(0, 2) || profile?.username?.slice(0, 2) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 flex items-center gap-2">
-            <Input
-              placeholder={replyingTo ? "Add a reply..." : "Add a comment..."}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1"
-              onKeyPress={(e) => e.key === 'Enter' && handleSendComment()}
-            />
-            <Button 
-              size="icon" 
-              onClick={handleSendComment}
-              disabled={!newComment.trim()}
-              className="h-10 w-10"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+      {user && (
+        <div className="bg-white border-t p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-2">
+              <Input
+                placeholder={replyingTo ? "Reply to comment..." : "Add a comment..."}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="flex-1"
+                onKeyPress={(e) => e.key === 'Enter' && handleSendComment()}
+              />
+              <Button 
+                size="icon" 
+                onClick={handleSendComment}
+                disabled={!newComment.trim()}
+                className="h-10 w-10"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

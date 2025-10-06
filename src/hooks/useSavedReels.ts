@@ -42,29 +42,21 @@ export function useSavedReels() {
 
       const { data, error } = await supabase
         .from('saved_reels')
-        .select('*')
+        .select(`
+          *,
+          reels!saved_reels_reel_id_fkey (
+            title,
+            thumbnail_url,
+            likes,
+            comments,
+            views
+          )
+        `)
         .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Fetch reel details for each saved reel
-      if (data && data.length > 0) {
-        const reelIds = data.map(sr => sr.reel_id);
-        const { data: reelsData } = await supabase
-          .from('reels')
-          .select('id, title, thumbnail_url, likes, comments, views')
-          .in('id', reelIds);
-
-        const savedWithReels = data.map(savedReel => ({
-          ...savedReel,
-          reels: reelsData?.find(r => r.id === savedReel.reel_id)
-        }));
-
-        setSavedReels(savedWithReels as unknown as SavedReel[]);
-      } else {
-        setSavedReels([]);
-      }
+      setSavedReels((data as unknown) as SavedReel[] || []);
     } catch (error) {
       console.error('Error fetching saved reels:', error);
     } finally {

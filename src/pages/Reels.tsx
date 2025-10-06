@@ -190,7 +190,7 @@ const Reels = () => {
                     </p>
                     {reelUploaders[reel.admin_id] && (
                       <p 
-                        className="text-sm font-medium text-primary cursor-pointer hover:underline"
+                        className="text-sm font-medium text-white cursor-pointer hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/profile/${reel.admin_id}`);
