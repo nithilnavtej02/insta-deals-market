@@ -23,11 +23,17 @@ export interface Conversation {
   updated_at: string;
   created_at: string;
   profiles?: {
+    id: string;
+    user_id: string;
     username: string;
     display_name: string;
     avatar_url: string;
   };
-  messages?: Message;
+  messages?: {
+    content: string | null;
+    message_type: string;
+    created_at: string;
+  };
 }
 
 export function useMessages() {
@@ -98,7 +104,7 @@ export function useMessages() {
 
           const { data: otherProfile } = await supabase
             .from('profiles')
-            .select('username, display_name, avatar_url')
+            .select('id, user_id, username, display_name, avatar_url')
             .eq('id', otherParticipantId)
             .single();
 

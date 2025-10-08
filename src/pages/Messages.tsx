@@ -7,6 +7,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
+import { UserPresence } from "@/components/UserPresence";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -58,13 +59,12 @@ const Messages = () => {
                 </div>
 
                 {/* Avatar */}
-                <div className="relative">
-                 <Avatar className="w-10 h-10">
-                   <AvatarImage src={conversation.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.profiles?.username}`} />
-                   <AvatarFallback>{conversation.profiles?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
-                 </Avatar>
-                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-               </div>
+                 <UserPresence userId={conversation.profiles?.user_id}>
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={conversation.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.profiles?.username}`} />
+                    <AvatarFallback>{conversation.profiles?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                 </UserPresence>
 
                {/* Content */}
                <div className="flex-1 min-w-0">

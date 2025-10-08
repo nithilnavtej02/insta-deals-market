@@ -87,7 +87,7 @@ const Chat = () => {
 
         const { data: otherProfile } = await supabase
           .from('profiles')
-          .select('username, display_name, avatar_url')
+          .select('id, user_id, username, display_name, avatar_url')
           .eq('id', otherParticipantId)
           .single();
 
