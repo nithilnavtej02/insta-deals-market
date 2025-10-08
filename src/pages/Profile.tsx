@@ -15,11 +15,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile, loading, updateProfile } = useProfile();
+  const { cartItems, getCartItemCount } = useCart();
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
@@ -168,7 +170,7 @@ const Profile = () => {
 
   const accountOptions = [
     { label: "My Listings", icon: Package, count: null },
-    { label: "Cart", icon: ShoppingCart, count: null },
+    { label: "Cart", icon: ShoppingCart, count: getCartItemCount() },
     { label: "Favorites", icon: Heart, count: null },
     { label: "Notifications", icon: Bell, count: null },
     { label: "Privacy & Security", icon: Shield, count: null },
@@ -427,6 +429,57 @@ const Profile = () => {
 
       {/* Recent Activity */}
       <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Cart</h2>
+          {cartItems.length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/cart')}
+            >
+              View All ({getCartItemCount()})
+            </Button>
+          )}
+        </div>
+        
+        {cartItems.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground mb-3">Your cart is empty</p>
+              <Button onClick={() => navigate('/home')}>Start Shopping</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {cartItems.slice(0, 3).map((item) => (
+              <Card key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate('/cart')}>
+                <CardContent className="p-3">
+                  <div className="flex gap-3">
+                    <img
+                      src={item.products?.images?.[0] || "/placeholder.svg"}
+                      alt={item.products?.title}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm truncate">{item.products?.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Qty: {item.quantity}
+                      </p>
+                      <p className="text-sm font-bold text-primary">
+                        ${item.products?.price}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent Activity */}
+      <div className="p-4">
         <h2 className="text-lg font-semibold mb-4 text-foreground">Recent Activity</h2>
         <div className="space-y-3">
           {recentActivity.length === 0 ? (
@@ -495,6 +548,9 @@ const Profile = () => {
                 >
                   <Icon className="h-5 w-5 text-primary" />
                   <span className="flex-1 font-medium text-foreground">{option.label}</span>
+                  {option.count !== null && option.count > 0 && (
+                    <Badge variant="secondary" className="mr-2">{option.count}</Badge>
+                  )}
                   <span className="text-muted-foreground">›</span>
                 </div>
               );
