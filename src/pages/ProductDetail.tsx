@@ -264,7 +264,13 @@ const ProductDetail = () => {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => navigate(`/u/${product.profiles?.username}`)}
+                  onClick={() => {
+                    if (product.profiles?.username) {
+                      navigate(`/u/${product.profiles.username}`);
+                    } else {
+                      toast.error('Unable to view profile');
+                    }
+                  }}
                 >
                   View Profile
                 </Button>

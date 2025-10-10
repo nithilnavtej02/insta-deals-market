@@ -474,6 +474,13 @@ const Profile = () => {
                 </CardContent>
               </Card>
             ))}
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => navigate('/checkout')}
+            >
+              Proceed to Checkout
+            </Button>
           </div>
         )}
       </div>
