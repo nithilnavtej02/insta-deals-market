@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -137,8 +137,8 @@ const Cart = () => {
                     ${getCartTotal().toFixed(2)}
                   </span>
                 </div>
-                <Button className="w-full" size="lg" onClick={handleCheckout}>
-                  Proceed to Checkout
+                <Button className="w-full" size="lg" asChild>
+                  <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
               </CardContent>
             </Card>

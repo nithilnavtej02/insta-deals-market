@@ -265,8 +265,10 @@ const ProductDetail = () => {
                   size="sm"
                   className="flex-1"
                   onClick={() => {
-                    if (product.profiles?.username) {
+                    if (product?.profiles?.username) {
                       navigate(`/u/${product.profiles.username}`);
+                    } else if (product?.seller_id) {
+                      navigate(`/profile/${product.seller_id}`);
                     } else {
                       toast.error('Unable to view profile');
                     }
