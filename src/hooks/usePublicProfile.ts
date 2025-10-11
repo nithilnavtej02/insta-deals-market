@@ -43,17 +43,24 @@ export function usePublicProfile(profileId?: string) {
     try {
       setError(null);
       
-      // Use the secure function to get only public profile data
-      const { data, error } = await supabase
-        .rpc('get_public_profile', { profile_user_id: profileId });
+      // Try secure function by profile_id first (works with /profile/:id)
+      const { data: byProfileId, error: byProfileIdError } = await supabase
+        .rpc('get_public_profile_by_profile_id', { profile_uuid: profileId });
 
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        setError('Profile not found');
-        setProfile(null);
+      if (!byProfileIdError && byProfileId && byProfileId.length > 0) {
+        setProfile(byProfileId[0]);
       } else {
-        setProfile(data[0]); // RPC returns an array, get the first item
+        // Fallback: original RPC by user_id
+        const { data: byUserId, error: byUserIdError } = await supabase
+          .rpc('get_public_profile', { profile_user_id: profileId });
+
+        if (byUserIdError) throw byUserIdError;
+        if (!byUserId || byUserId.length === 0) {
+          setError('Profile not found');
+          setProfile(null);
+        } else {
+          setProfile(byUserId[0]);
+        }
       }
     } catch (error) {
       console.error('Error fetching public profile:', error);

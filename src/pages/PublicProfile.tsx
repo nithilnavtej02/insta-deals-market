@@ -29,14 +29,11 @@ const PublicProfile = () => {
       if (username && !profileId) {
         // Route like /u/username - resolve username to profile ID
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('username', username)
-            .single();
+          const { data: resolvedId, error } = await supabase
+            .rpc('get_profile_id_by_username', { uname: username });
           
-          if (data && !error) {
-            setActualProfileId(data.id);
+          if (!error && resolvedId) {
+            setActualProfileId(resolvedId as string);
           }
         } catch (error) {
           console.error('Error resolving username to profile ID:', error);

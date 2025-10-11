@@ -725,6 +725,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_profile_id_by_username: {
+        Args: { uname: string }
+        Returns: string
+      }
       get_profiles_basic_by_ids: {
         Args: { ids: string[] }
         Returns: {
@@ -737,6 +741,26 @@ export type Database = {
       }
       get_public_profile: {
         Args: { profile_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          items_sold: number
+          location: string
+          rating: number
+          total_reviews: number
+          updated_at: string
+          user_id: string
+          username: string
+          verified: boolean
+        }[]
+      }
+      get_public_profile_by_profile_id: {
+        Args: { profile_uuid: string }
         Returns: {
           avatar_url: string
           bio: string
