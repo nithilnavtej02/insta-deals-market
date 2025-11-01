@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Edit, Eye, Heart, MessageCircle, Plus, Calendar, User, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Eye, Heart, MessageCircle, Plus, Calendar, User, DollarSign, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const MyListings = () => {
   const navigate = useNavigate();
@@ -70,6 +71,29 @@ const MyListings = () => {
   const handleStatusClick = (listing: any) => {
     setSelectedListing(listing);
     setShowStatusDialog(true);
+  };
+
+  const handleDeleteListing = async (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('Are you sure you want to delete this listing?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast.success('Listing deleted successfully');
+      fetchUserProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete listing');
+    }
   };
 
   return (
@@ -141,17 +165,27 @@ const MyListings = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">{new Date(product.created_at).toLocaleDateString()}</span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/sell?edit=${product.id}`);
-                        }}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/sell?edit=${product.id}`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={(e) => handleDeleteListing(product.id, e)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

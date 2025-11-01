@@ -13,6 +13,7 @@ import { useLocation } from "@/hooks/useLocation";
 import { useShareProduct } from "@/hooks/useShareProduct";
 import { useFavorites } from "@/hooks/useFavorites";
 import ShareDialog from "@/components/ShareDialog";
+import { formatLocation } from "@/utils/locationFormat";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -140,16 +141,16 @@ const Home = () => {
       {/* Latest Products */}
       <div className="px-4 pb-20">
         <h3 className="text-lg font-semibold mb-4">Latest Products</h3>
-        <div className="space-y-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {productsLoading ? (
-            <div className="text-center py-8">Loading products...</div>
+            <div className="col-span-full text-center py-8">Loading products...</div>
           ) : products.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No products available</div>
+            <div className="col-span-full text-center py-8 text-muted-foreground">No products available</div>
           ) : (
             products.map((product) => (
               <div
                 key={product.id}
-                className="border rounded-lg overflow-hidden cursor-pointer"
+                className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => navigate(`/product/${product.id}`)}
               >
                 <div className="relative">
@@ -174,28 +175,26 @@ const Home = () => {
                   </Button>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg">{product.title}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-2">{product.title}</h3>
                   <p className="text-xl font-bold text-primary">${product.price}</p>
+                  <div className="mt-2">
+                    <p className="text-sm text-muted-foreground line-clamp-1">{formatLocation(product.location)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {product.profiles?.username || 'Seller'} • ⭐ {4.5}
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between mt-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{product.location}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {product.seller_id} • ⭐ {4.5}
-                      </p>
-                    </div>
-                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShareDialog({isOpen: true, product});
-                        }}
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">{product.likes} likes</span>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShareDialog({isOpen: true, product});
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">{product.likes} likes</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {new Date(product.created_at).toLocaleDateString()}

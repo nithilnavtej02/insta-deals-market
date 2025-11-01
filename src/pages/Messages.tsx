@@ -70,8 +70,10 @@ const Messages = () => {
                <div className="flex-1 min-w-0">
                  <div className="flex items-center justify-between mb-1">
                    <div>
-                     <h3 className="font-medium text-sm truncate">{conversation.profiles?.display_name || conversation.profiles?.username}</h3>
-                     <p className="text-xs text-primary">@{conversation.profiles?.username}</p>
+                     <h3 className="font-medium text-sm truncate">
+                       {conversation.profiles?.display_name || conversation.profiles?.username || 'User'}
+                     </h3>
+                     <p className="text-xs text-primary">@{conversation.profiles?.username || 'unknown'}</p>
                    </div>
                    <div className="flex items-center gap-2 flex-shrink-0">
                      <span className="text-xs text-muted-foreground">{new Date(conversation.updated_at).toLocaleDateString()}</span>

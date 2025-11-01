@@ -1,4 +1,4 @@
-import { ArrowLeft, Send, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -195,8 +195,8 @@ const Chat = () => {
                 </Avatar>
               </UserPresence>
               <div>
-                <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username}</h2>
-                <p className="text-xs text-primary">@{otherUser.username}</p>
+                <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'User'}</h2>
+                <p className="text-xs text-primary">@{otherUser.username || 'unknown'}</p>
               </div>
             </div>
           </div>

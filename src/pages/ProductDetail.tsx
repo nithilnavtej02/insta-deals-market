@@ -15,6 +15,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareDialog from "@/components/ShareDialog";
+import { formatLocation } from "@/utils/locationFormat";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -202,7 +203,7 @@ const ProductDetail = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Location:</span>
-                <span className="font-medium">{product.location || 'N/A'}</span>
+                <span className="font-medium">{formatLocation(product.location)}</span>
               </div>
             </div>
           </CardContent>
@@ -253,7 +254,7 @@ const ProductDetail = () => {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      <span>{product.location || 'N/A'}</span>
+                      <span>{formatLocation(product.location)}</span>
                     </div>
                   </div>
                 </div>

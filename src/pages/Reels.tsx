@@ -83,7 +83,7 @@ const Reels = () => {
   return (
     <div className="h-screen overflow-hidden bg-black">
       <div className="lg:flex lg:justify-center lg:items-center lg:min-h-screen">
-        <div className="lg:w-96 lg:h-screen h-screen">
+        <div className="w-full lg:max-w-md mx-auto h-screen">{/* Changed from lg:w-96 to maintain aspect ratio */}
           {/* Header */}
           <div className="px-5 py-4 bg-black">
             <h1 className="text-2xl font-bold text-white">Product Reels</h1>
