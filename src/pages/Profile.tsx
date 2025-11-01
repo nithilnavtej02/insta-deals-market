@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useFollows } from "@/hooks/useFollows";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
@@ -21,6 +22,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile, loading, updateProfile } = useProfile();
+  const { following: followingList } = useFollows();
   const { cartItems, getCartItemCount } = useCart();
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -635,10 +637,13 @@ const Profile = () => {
       <Dialog open={showFollowing} onOpenChange={setShowFollowing}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Following (345)</DialogTitle>
+            <DialogTitle>Following ({following.length})</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {following.map((follow) => (
+            {following.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Not following anyone yet</p>
+            ) : (
+              following.map((follow) => (
               <div key={follow.id} className="flex items-center gap-3">
                 <Avatar 
                   className="w-10 h-10 cursor-pointer"
@@ -675,7 +680,8 @@ const Profile = () => {
                   Following
                 </Button>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>
