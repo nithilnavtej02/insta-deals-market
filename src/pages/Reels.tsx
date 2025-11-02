@@ -82,8 +82,8 @@ const Reels = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-black">
-      <div className="lg:flex lg:justify-center lg:items-center lg:min-h-screen">
-        <div className="w-full lg:max-w-md mx-auto h-screen">{/* Changed from lg:w-96 to maintain aspect ratio */}
+      <div className="lg:flex lg:justify-center lg:items-center lg:min-h-screen lg:bg-black">
+        <div className="w-full lg:max-w-[400px] lg:aspect-[9/16] mx-auto h-screen lg:h-auto">{/* Portrait aspect ratio with max width */}
           {/* Header */}
           <div className="px-5 py-4 bg-black">
             <h1 className="text-2xl font-bold text-white">Product Reels</h1>

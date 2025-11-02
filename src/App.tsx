@@ -30,6 +30,8 @@ import PrivacySecurity from "./pages/PrivacySecurity";
 import Location from "./pages/Location";
 import CategoryProducts from "./pages/CategoryProducts";
 import AdminReels from "./pages/AdminReels";
+import AdminOrders from "./pages/AdminOrders";
+import UserOrders from "./pages/UserOrders";
 import NotFound from "./pages/NotFound";
 import Saved from "./pages/Saved";
 import Cart from "./pages/Cart";
@@ -85,6 +87,8 @@ const AppContent = () => {
         <Route path="/location" element={user ? <Location /> : <Navigate to="/auth" />} />
         <Route path="/reviews" element={user ? <Reviews /> : <Navigate to="/auth" />} />
         <Route path="/admin/reels" element={user ? <AdminReels /> : <Navigate to="/auth" />} />
+        <Route path="/admin/orders" element={user ? <AdminOrders /> : <Navigate to="/auth" />} />
+        <Route path="/my-orders" element={user ? <UserOrders /> : <Navigate to="/auth" />} />
         <Route path="/cart" element={user ? <Cart /> : <Navigate to="/auth" />} />
         <Route path="/checkout" element={user ? <Checkout /> : <Navigate to="/auth" />} />
         <Route path="/share" element={user ? <ShareSheet /> : <Navigate to="/auth" />} />

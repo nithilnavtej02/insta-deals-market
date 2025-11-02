@@ -305,43 +305,88 @@ export type Database = {
       }
       orders: {
         Row: {
+          buyer_email: string | null
           buyer_id: string
+          buyer_mobile: string
           created_at: string
+          delivered_at: string | null
           id: string
           notes: string | null
-          payment_method: string | null
+          paid_at: string | null
+          payment_method: string
+          payment_proof_url: string | null
+          payment_status: string | null
           product_id: string
+          quantity: number | null
           seller_id: string
-          shipping_address: Json | null
+          shipped_at: string | null
+          shipping_address: string
+          shipping_city: string
+          shipping_country: string | null
+          shipping_first_name: string
+          shipping_last_name: string
+          shipping_postal_code: string
+          shipping_state: string | null
           status: string | null
           total_amount: number
           updated_at: string
+          utr_number: string | null
         }
         Insert: {
+          buyer_email?: string | null
           buyer_id: string
+          buyer_mobile: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           notes?: string | null
-          payment_method?: string | null
+          paid_at?: string | null
+          payment_method: string
+          payment_proof_url?: string | null
+          payment_status?: string | null
           product_id: string
+          quantity?: number | null
           seller_id: string
-          shipping_address?: Json | null
+          shipped_at?: string | null
+          shipping_address: string
+          shipping_city: string
+          shipping_country?: string | null
+          shipping_first_name: string
+          shipping_last_name: string
+          shipping_postal_code: string
+          shipping_state?: string | null
           status?: string | null
           total_amount: number
           updated_at?: string
+          utr_number?: string | null
         }
         Update: {
+          buyer_email?: string | null
           buyer_id?: string
+          buyer_mobile?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           notes?: string | null
-          payment_method?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          payment_proof_url?: string | null
+          payment_status?: string | null
           product_id?: string
+          quantity?: number | null
           seller_id?: string
-          shipping_address?: Json | null
+          shipped_at?: string | null
+          shipping_address?: string
+          shipping_city?: string
+          shipping_country?: string | null
+          shipping_first_name?: string
+          shipping_last_name?: string
+          shipping_postal_code?: string
+          shipping_state?: string | null
           status?: string | null
           total_amount?: number
           updated_at?: string
+          utr_number?: string | null
         }
         Relationships: [
           {
@@ -470,6 +515,7 @@ export type Database = {
           id: string
           items_sold: number | null
           location: string | null
+          mobile_number: string | null
           phone: string | null
           rating: number | null
           total_reviews: number | null
@@ -489,6 +535,7 @@ export type Database = {
           id?: string
           items_sold?: number | null
           location?: string | null
+          mobile_number?: string | null
           phone?: string | null
           rating?: number | null
           total_reviews?: number | null
@@ -508,6 +555,7 @@ export type Database = {
           id?: string
           items_sold?: number | null
           location?: string | null
+          mobile_number?: string | null
           phone?: string | null
           rating?: number | null
           total_reviews?: number | null
@@ -720,15 +768,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_profile_id_by_username: {
-        Args: { uname: string }
-        Returns: string
-      }
+      get_profile_id_by_username: { Args: { uname: string }; Returns: string }
       get_profiles_basic_by_ids: {
         Args: { ids: string[] }
         Returns: {
@@ -779,6 +845,13 @@ export type Database = {
           verified: boolean
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       notify_reel_admin: {
         Args: {
           interaction_type: string
@@ -800,7 +873,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -927,6 +1000,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

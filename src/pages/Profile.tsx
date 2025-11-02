@@ -186,7 +186,7 @@ const Profile = () => {
         {/* Profile Info */}
         <div className="flex items-start gap-4 mb-6">
           <Avatar 
-            className="w-16 h-16 cursor-pointer"
+            className="w-24 h-24 cursor-pointer relative"
             onClick={() => {
               const input = document.createElement('input');
               input.type = 'file';
@@ -195,7 +195,6 @@ const Profile = () => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file && profile) {
                   try {
-                    // Upload to Supabase storage
                     const fileExt = file.name.split('.').pop();
                     const fileName = `${profile.id}.${fileExt}`;
                     
@@ -205,12 +204,10 @@ const Profile = () => {
                     
                     if (error) throw error;
                     
-                    // Get public URL
                     const { data: { publicUrl } } = supabase.storage
                       .from('avatars')
                       .getPublicUrl(fileName);
                     
-                    // Update profile with new avatar URL
                     await updateProfile({ avatar_url: publicUrl });
                     toast.success('Profile picture updated!');
                   } catch (error) {
@@ -235,6 +232,42 @@ const Profile = () => {
               }
             </AvatarFallback>
           </Avatar>
+          <div className="absolute bottom-0 right-20 w-7 h-7 bg-primary rounded-full flex items-center justify-center cursor-pointer border-2 border-background"
+            onClick={(e) => {
+              e.stopPropagation();
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file && profile) {
+                  try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${profile.id}.${fileExt}`;
+                    
+                    const { data, error } = await supabase.storage
+                      .from('avatars')
+                      .upload(fileName, file, { upsert: true });
+                    
+                    if (error) throw error;
+                    
+                    const { data: { publicUrl } } = supabase.storage
+                      .from('avatars')
+                      .getPublicUrl(fileName);
+                    
+                    await updateProfile({ avatar_url: publicUrl });
+                    toast.success('Profile picture updated!');
+                  } catch (error) {
+                    console.error('Error uploading avatar:', error);
+                    toast.error('Failed to upload profile picture');
+                  }
+                }
+              };
+              input.click();
+            }}
+          >
+            <span className="text-white text-lg font-bold">+</span>
+          </div>
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
