@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -26,12 +27,34 @@ const Auth = () => {
 
       setLoading(true);
       try {
-        const { data, error } = await signIn(email, password);
+        // Check if input is username, phone, or email
+        let loginEmail = email;
+        
+        // If not an email format, lookup by username or phone
+        if (!email.includes('@')) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .or(`username.eq.${email},phone.eq.${email},mobile_number.eq.${email}`)
+            .single();
+
+          if (profileError || !profile?.email) {
+            toast.error("Account not found");
+            setLoading(false);
+            return;
+          }
+          
+          loginEmail = profile.email;
+        }
+
+        const { data, error } = await signIn(loginEmail, password);
         
         if (error) {
           if (error.message.includes('Email not confirmed')) {
             setIsOtpStep(true);
             toast.info("Please check your email for confirmation");
+          } else if (error.message.includes('Invalid login')) {
+            toast.error("Invalid credentials");
           } else {
             toast.error(error.message);
           }
@@ -45,7 +68,6 @@ const Auth = () => {
         setLoading(false);
       }
     } else {
-      // Handle OTP verification here if needed
       toast.info("Please check your email and click the confirmation link");
     }
   };
@@ -69,11 +91,11 @@ const Auth = () => {
         {!isOtpStep ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="email">Email or Phone</Label>
+              <Label htmlFor="email">Email, Username or Phone</Label>
               <Input
                 id="email"
                 type="text"
-                placeholder="Enter your email or phone number"
+                placeholder="Enter your email, username or phone"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-12"

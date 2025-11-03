@@ -18,10 +18,13 @@ const CreateAccount = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    countryCode: "+91",
     phone: "",
     password: "",
     confirmPassword: ""
   });
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
   const [validation, setValidation] = useState<{
     username: { checking: boolean; available: boolean | null };
     email: { checking: boolean; available: boolean | null };
@@ -88,9 +91,37 @@ const CreateAccount = () => {
     }
   };
 
+  const sendOtp = async () => {
+    if (!formData.phone || !formData.countryCode) {
+      toast.error("Please enter your phone number");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // For now, simulate OTP sending - in production, use SMS service
+      toast.success("OTP sent to your phone number");
+      setIsOtpSent(true);
+    } catch (error) {
+      toast.error("Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateAccount = async () => {
-    if (!formData.username || !formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
+    if (!formData.username || !formData.phone || !formData.password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!isOtpSent) {
+      toast.error("Please verify your phone number first");
+      return;
+    }
+
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter valid 6-digit OTP");
       return;
     }
 
@@ -99,25 +130,32 @@ const CreateAccount = () => {
       return;
     }
 
-    // Enhanced password validation
     const passwordValidation = validatePassword(formData.password);
     if (!passwordValidation.isValid) {
-      toast.error(passwordValidation.errors[0]); // Show first error
+      toast.error(passwordValidation.errors[0]);
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await signUp(formData.email, formData.password, {
+      // Use email if provided, otherwise generate a placeholder
+      const emailToUse = formData.email || `${formData.username}@temp.local`;
+      
+      const { data, error } = await signUp(emailToUse, formData.password, {
         username: formData.username,
-        phone: formData.phone
+        phone: formData.countryCode + formData.phone,
+        mobile_number: formData.countryCode + formData.phone
       });
 
       if (error) {
-        toast.error(error.message);
+        if (error.message.includes('already registered')) {
+          toast.error("Username or phone already exists");
+        } else {
+          toast.error(error.message);
+        }
       } else {
-        toast.success("Account created! Please check your email to confirm your account.");
-        navigate("/auth");
+        toast.success("Account created successfully!");
+        navigate("/home");
       }
     } catch (error) {
       toast.error("An error occurred during sign up");
@@ -166,12 +204,12 @@ const CreateAccount = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email (Optional)</Label>
           <div className="relative">
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email address"
+              placeholder="Enter your email address (optional)"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               className="h-12 pr-12"
@@ -191,29 +229,67 @@ const CreateAccount = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
-          <div className="relative">
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="Enter your phone number"
-              value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
-              className="h-12 pr-12"
-            />
-            {formData.phone && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {validation.phone.checking ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                ) : validation.phone.available === true ? (
+          <Label htmlFor="phone">Phone Number *</Label>
+          <div className="flex gap-2">
+            <select
+              value={formData.countryCode}
+              onChange={(e) => handleInputChange("countryCode", e.target.value)}
+              className="h-12 px-3 rounded-md border bg-background"
+            >
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+86">🇨🇳 +86</option>
+              <option value="+81">🇯🇵 +81</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+61">🇦🇺 +61</option>
+              <option value="+55">🇧🇷 +55</option>
+              <option value="+7">🇷🇺 +7</option>
+            </select>
+            <div className="relative flex-1">
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                className="h-12 pr-24"
+              />
+              {formData.phone && !isOtpSent && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={sendOtp}
+                  disabled={loading || validation.phone.checking}
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                  Send OTP
+                </Button>
+              )}
+              {formData.phone && isOtpSent && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <Check className="h-4 w-4 text-green-500" />
-                ) : validation.phone.available === false ? (
-                  <X className="h-4 w-4 text-red-500" />
-                ) : null}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {isOtpSent && (
+          <div className="space-y-2">
+            <Label htmlFor="otp">Enter OTP</Label>
+            <Input
+              id="otp"
+              type="text"
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              className="h-12 text-center text-lg tracking-widest"
+            />
+          </div>
+        )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

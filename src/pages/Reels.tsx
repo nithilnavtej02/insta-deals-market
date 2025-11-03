@@ -8,6 +8,7 @@ import { useReels } from "@/hooks/useReels";
 import { useSavedReels } from "@/hooks/useSavedReels";
 import { useReelsLikes } from "@/hooks/useReelsLikes";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Reels = () => {
   const navigate = useNavigate();
@@ -52,10 +53,16 @@ const Reels = () => {
 
 
   const toggleSave = async (reelId: string) => {
-    if (isSaved(reelId)) {
-      await unsaveReel(reelId);
-    } else {
-      await saveReel(reelId);
+    try {
+      if (isSaved(reelId)) {
+        await unsaveReel(reelId);
+        toast.success("Removed from saved");
+      } else {
+        await saveReel(reelId);
+        toast.success("Saved!");
+      }
+    } catch (error) {
+      toast.error("Failed to save reel");
     }
   };
 

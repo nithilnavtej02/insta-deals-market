@@ -35,14 +35,32 @@ export function useCurrentLocation() {
 
       const { latitude, longitude } = position.coords;
 
-      // Use reverse geocoding to get address
+      // Use reverse geocoding to get human-readable address
       try {
         const response = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+          {
+            headers: {
+              'User-Agent': 'ReownMarketplace/1.0'
+            }
+          }
         );
+        
+        if (!response.ok) throw new Error('Geocoding failed');
+        
         const data = await response.json();
         
-        const address = data.city || data.locality || data.principalSubdivision || 'Unknown Location';
+        // Extract meaningful location parts
+        const addressData = data.address || {};
+        const parts = [
+          addressData.neighbourhood || addressData.suburb || addressData.hamlet,
+          addressData.city || addressData.town || addressData.village,
+          addressData.state
+        ].filter(Boolean);
+        
+        const address = parts.length > 0 
+          ? parts.join(', ') 
+          : data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         
         const locationData = {
           latitude,
@@ -61,7 +79,7 @@ export function useCurrentLocation() {
         const locationData = {
           latitude,
           longitude,
-          address: 'Current Location'
+          address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
         };
         
         setLocation(locationData);
