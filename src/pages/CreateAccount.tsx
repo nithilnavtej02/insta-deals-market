@@ -23,8 +23,6 @@ const CreateAccount = () => {
     password: "",
     confirmPassword: ""
   });
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
   const [validation, setValidation] = useState<{
     username: { checking: boolean; available: boolean | null };
     email: { checking: boolean; available: boolean | null };
@@ -91,37 +89,14 @@ const CreateAccount = () => {
     }
   };
 
-  const sendOtp = async () => {
-    if (!formData.phone || !formData.countryCode) {
-      toast.error("Please enter your phone number");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // For now, simulate OTP sending - in production, use SMS service
-      toast.success("OTP sent to your phone number");
-      setIsOtpSent(true);
-    } catch (error) {
-      toast.error("Failed to send OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateAccount = async () => {
     if (!formData.username || !formData.phone || !formData.password) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    if (!isOtpSent) {
-      toast.error("Please verify your phone number first");
-      return;
-    }
-
-    if (!otp || otp.length !== 6) {
-      toast.error("Please enter valid 6-digit OTP");
+    if (formData.username.length < 3) {
+      toast.error("Username must be at least 3 characters");
       return;
     }
 
@@ -143,6 +118,7 @@ const CreateAccount = () => {
       
       const { data, error } = await signUp(emailToUse, formData.password, {
         username: formData.username,
+        email: formData.email || null,
         phone: formData.countryCode + formData.phone,
         mobile_number: formData.countryCode + formData.phone
       });
@@ -179,7 +155,7 @@ const CreateAccount = () => {
 
       <div className="p-6 max-w-md mx-auto space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">Username (minimum 3 characters)</Label>
           <div className="relative">
             <Input
               id="username"
@@ -188,14 +164,15 @@ const CreateAccount = () => {
               value={formData.username}
               onChange={(e) => handleInputChange("username", e.target.value)}
               className="h-12 pr-12"
+              minLength={3}
             />
             {formData.username && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {validation.username.checking ? (
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                ) : validation.username.available === true ? (
+                ) : validation.username.available === true && formData.username.length >= 3 ? (
                   <Check className="h-4 w-4 text-green-500" />
-                ) : validation.username.available === false ? (
+                ) : validation.username.available === false || formData.username.length < 3 ? (
                   <X className="h-4 w-4 text-red-500" />
                 ) : null}
               </div>
@@ -246,6 +223,40 @@ const CreateAccount = () => {
               <option value="+61">🇦🇺 +61</option>
               <option value="+55">🇧🇷 +55</option>
               <option value="+7">🇷🇺 +7</option>
+              <option value="+52">🇲🇽 +52</option>
+              <option value="+34">🇪🇸 +34</option>
+              <option value="+39">🇮🇹 +39</option>
+              <option value="+31">🇳🇱 +31</option>
+              <option value="+46">🇸🇪 +46</option>
+              <option value="+47">🇳🇴 +47</option>
+              <option value="+45">🇩🇰 +45</option>
+              <option value="+41">🇨🇭 +41</option>
+              <option value="+32">🇧🇪 +32</option>
+              <option value="+43">🇦🇹 +43</option>
+              <option value="+351">🇵🇹 +351</option>
+              <option value="+30">🇬🇷 +30</option>
+              <option value="+48">🇵🇱 +48</option>
+              <option value="+420">🇨🇿 +420</option>
+              <option value="+36">🇭🇺 +36</option>
+              <option value="+90">🇹🇷 +90</option>
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+972">🇮🇱 +972</option>
+              <option value="+20">🇪🇬 +20</option>
+              <option value="+27">🇿🇦 +27</option>
+              <option value="+234">🇳🇬 +234</option>
+              <option value="+254">🇰🇪 +254</option>
+              <option value="+82">🇰🇷 +82</option>
+              <option value="+65">🇸🇬 +65</option>
+              <option value="+60">🇲🇾 +60</option>
+              <option value="+63">🇵🇭 +63</option>
+              <option value="+66">🇹🇭 +66</option>
+              <option value="+84">🇻🇳 +84</option>
+              <option value="+62">🇮🇩 +62</option>
+              <option value="+880">🇧🇩 +880</option>
+              <option value="+92">🇵🇰 +92</option>
+              <option value="+64">🇳🇿 +64</option>
+              <option value="+98">🇮🇷 +98</option>
             </select>
             <div className="relative flex-1">
               <Input
@@ -254,42 +265,11 @@ const CreateAccount = () => {
                 placeholder="Enter your phone number"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                className="h-12 pr-24"
+                className="h-12"
               />
-              {formData.phone && !isOtpSent && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={sendOtp}
-                  disabled={loading || validation.phone.checking}
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                >
-                  Send OTP
-                </Button>
-              )}
-              {formData.phone && isOtpSent && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Check className="h-4 w-4 text-green-500" />
-                </div>
-              )}
             </div>
           </div>
         </div>
-
-        {isOtpSent && (
-          <div className="space-y-2">
-            <Label htmlFor="otp">Enter OTP</Label>
-            <Input
-              id="otp"
-              type="text"
-              placeholder="Enter 6-digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              className="h-12 text-center text-lg tracking-widest"
-            />
-          </div>
-        )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

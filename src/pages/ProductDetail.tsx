@@ -105,8 +105,54 @@ const ProductDetail = () => {
   const handleChat = async () => {
     if (!product?.seller_id) return;
     
-    navigate('/messages');
-    toast.success('Opening messages...');
+    try {
+      // First, get the current user's profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to chat');
+        return;
+      }
+
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!userProfile) {
+        toast.error('Profile not found');
+        return;
+      }
+
+      // Check if conversation already exists
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${userProfile.id},participant_2.eq.${product.seller_id}),and(participant_1.eq.${product.seller_id},participant_2.eq.${userProfile.id})`)
+        .single();
+
+      if (existingConv) {
+        // Navigate to existing conversation
+        navigate(`/chat/${existingConv.id}`);
+      } else {
+        // Create new conversation
+        const { data: newConv, error } = await supabase
+          .from('conversations')
+          .insert({
+            participant_1: userProfile.id,
+            participant_2: product.seller_id
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        
+        navigate(`/chat/${newConv.id}`);
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Failed to open chat');
+    }
   };
 
   const handleFollow = () => {
