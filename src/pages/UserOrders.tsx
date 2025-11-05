@@ -24,6 +24,7 @@ const UserOrders = () => {
   const fetchUserOrders = async () => {
     if (!user) return;
 
+    setLoading(true);
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -31,20 +32,42 @@ const UserOrders = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (!profile) return;
+      if (!profile) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          products(title, price, images),
-          seller:seller_id(username, display_name)
+          products(id, title, price, images, seller_id)
         `)
         .eq('buyer_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+
+      // Fetch seller profiles separately
+      const ordersWithSellers = await Promise.all(
+        (data || []).map(async (order) => {
+          if (order.products?.seller_id) {
+            const { data: seller } = await supabase
+              .from('profiles')
+              .select('username, display_name, avatar_url')
+              .eq('id', order.products.seller_id)
+              .single();
+
+            return {
+              ...order,
+              seller
+            };
+          }
+          return order;
+        })
+      );
+
+      setOrders(ordersWithSellers);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');

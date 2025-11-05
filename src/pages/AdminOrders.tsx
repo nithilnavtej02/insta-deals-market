@@ -57,14 +57,37 @@ const AdminOrders = () => {
         .from('orders')
         .select(`
           *,
-          buyer:buyer_id(username, display_name, avatar_url, email, mobile_number),
-          seller:seller_id(username, display_name),
-          products(title, price, images)
+          products(id, title, price, images, seller_id)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+
+      // Fetch buyer and seller profiles separately
+      const ordersWithProfiles = await Promise.all(
+        (data || []).map(async (order) => {
+          const [buyerRes, sellerRes] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('id, username, display_name, avatar_url, email, mobile_number')
+              .eq('id', order.buyer_id)
+              .single(),
+            order.seller_id ? supabase
+              .from('profiles')
+              .select('id, username, display_name, avatar_url')
+              .eq('id', order.seller_id)
+              .single() : Promise.resolve({ data: null })
+          ]);
+
+          return {
+            ...order,
+            buyer: buyerRes.data,
+            seller: sellerRes.data
+          };
+        })
+      );
+
+      setOrders(ordersWithProfiles);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
