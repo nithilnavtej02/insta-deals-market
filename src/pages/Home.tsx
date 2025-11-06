@@ -14,6 +14,7 @@ import { useShareProduct } from "@/hooks/useShareProduct";
 import { useFavorites } from "@/hooks/useFavorites";
 import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
+import { toast } from "sonner";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -50,10 +51,25 @@ const Home = () => {
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
 
   const toggleLike = async (productId: string) => {
+    if (!user) {
+      toast.success('Please sign in to like products');
+      return;
+    }
+    
     if (isFavorite(productId)) {
-      await removeFromFavorites(productId);
+      const result = await removeFromFavorites(productId);
+      if (result.error) {
+        toast.error('Failed to unlike product');
+      } else {
+        toast.success('Removed from favorites');
+      }
     } else {
-      await addToFavorites(productId);
+      const result = await addToFavorites(productId);
+      if (result.error) {
+        toast.error('Failed to like product');
+      } else {
+        toast.success('Added to favorites');
+      }
     }
   };
 

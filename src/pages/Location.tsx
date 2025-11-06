@@ -44,17 +44,21 @@ const Location = () => {
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
+      toast.info('Getting your location...');
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // Use BigDataCloud reverse geocoding API (free)
             const response = await fetch(
               `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
             );
             
             if (response.ok) {
               const data = await response.json();
-              const locationName = data.city || data.locality || data.principalSubdivision || "Current Location";
+              const cityName = data.city || data.locality || data.principalSubdivision;
+              const stateName = data.principalSubdivision || data.countryName;
+              const locationName = cityName && stateName 
+                ? `${cityName}, ${stateName}` 
+                : cityName || stateName || "Current Location";
               handleLocationSelect(locationName);
             } else {
               handleLocationSelect("Current Location");
@@ -66,7 +70,7 @@ const Location = () => {
         },
         (error) => {
           console.error("Error getting location:", error);
-          toast.error("Unable to get current location");
+          toast.error("Unable to get current location. Please enable location services.");
         }
       );
     } else {

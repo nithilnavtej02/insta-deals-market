@@ -107,19 +107,19 @@ const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, title, url, 
         </div>
 
         {/* Share Options as Circles */}
-        <div className="grid grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-4 gap-6 mt-6">
           {shareOptions.map((option) => {
             const Icon = option.icon;
             return (
               <div
                 key={option.name}
-                className="flex flex-col items-center gap-2 cursor-pointer"
+                className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={option.onClick}
               >
-                <div className={`w-14 h-14 rounded-full ${option.color} flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform`}>
-                  <Icon className="h-6 w-6" />
+                <div className={`w-16 h-16 rounded-full ${option.color} flex items-center justify-center text-white shadow-lg hover:scale-105 transition-transform`}>
+                  <Icon className="h-7 w-7" />
                 </div>
-                <span className="text-xs text-center text-muted-foreground">{option.name}</span>
+                <span className="text-xs text-center text-muted-foreground font-medium">{option.name}</span>
               </div>
             );
           })}
