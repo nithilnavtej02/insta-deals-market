@@ -153,6 +153,39 @@ const Profile = () => {
     }
   };
 
+  // Avatar picker and uploader - used by both avatar and + button
+  const openAvatarPicker = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file && profile && user) {
+        try {
+          const fileExt = file.name.split('.').pop();
+          const path = `${user.id}/avatar.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, file, { upsert: true, contentType: file.type });
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(path);
+
+          await updateProfile({ avatar_url: publicUrl });
+          toast.success('Profile picture updated!');
+        } catch (error) {
+          console.error('Error uploading avatar:', error);
+          toast.error('Failed to upload profile picture');
+        }
+      }
+    };
+    input.click();
+  };
+
   const handleAccountOptionClick = (label: string) => {
     switch(label) {
       case 'Cart':
@@ -220,39 +253,9 @@ const Profile = () => {
         <div className="flex items-start gap-4 mb-6 relative">
           <Avatar 
             className="w-24 h-24 cursor-pointer relative"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file && profile) {
-                  try {
-                    const fileExt = file.name.split('.').pop();
-                    const fileName = `${profile.id}.${fileExt}`;
-                    
-                    const { data, error } = await supabase.storage
-                      .from('avatars')
-                      .upload(fileName, file, { upsert: true });
-                    
-                    if (error) throw error;
-                    
-                    const { data: { publicUrl } } = supabase.storage
-                      .from('avatars')
-                      .getPublicUrl(fileName);
-                    
-                    await updateProfile({ avatar_url: publicUrl });
-                    toast.success('Profile picture updated!');
-                  } catch (error) {
-                    console.error('Error uploading avatar:', error);
-                    toast.error('Failed to upload profile picture');
-                  }
-                }
-              };
-              input.click();
-            }}
+            onClick={openAvatarPicker}
           >
-            <AvatarImage src={profile?.avatar_url} />
+            <AvatarImage src={profile?.avatar_url || undefined} />
             <AvatarFallback className="bg-primary text-white text-xl">
               {profile?.avatar_url ? 
                 ((profile?.display_name && profile.display_name.slice(0, 2)) || 
@@ -304,6 +307,7 @@ const Profile = () => {
               variant="ghost"
               size="sm"
               className="text-muted-foreground text-xs p-0 h-auto mt-1"
+              onClick={() => navigate('/location')}
             >
               📍 {profile?.location || 'Location not set'}
             </Button>
@@ -311,8 +315,9 @@ const Profile = () => {
 
           {/* Add Review Button - positioned below avatar using absolute positioning */}
           <Button
-            onClick={() => navigate('/reviews')}
+            onClick={openAvatarPicker}
             size="icon"
+            aria-label="Change profile picture"
             className="absolute -bottom-2 left-16 rounded-full w-12 h-12 shadow-lg bg-primary hover:bg-primary/90 z-10"
           >
             <Plus className="h-5 w-5 text-white" />
