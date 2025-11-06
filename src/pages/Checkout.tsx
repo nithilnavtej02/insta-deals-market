@@ -137,7 +137,7 @@ const Checkout = () => {
       }
 
       for (const item of orderItems) {
-        await supabase.from('orders').insert({
+        const { data: order } = await supabase.from('orders').insert({
           buyer_id: profile.id,
           seller_id: item.seller_id,
           product_id: item.id,
@@ -155,7 +155,34 @@ const Checkout = () => {
           utr_number: formData.utrNumber,
           payment_proof_url: paymentProofUrl,
           quantity: item.quantity
-        });
+        }).select().single();
+
+        // Create notification for seller
+        if (order && item.seller_id) {
+          const orderDetailsText = `
+New order received!
+Product: ${item.title}
+Quantity: ${item.quantity}
+Amount: $${item.price * item.quantity}
+
+Shipping Details:
+${formData.firstName} ${formData.lastName}
+${formData.address}
+${formData.city}, ${formData.postalCode}${formData.state ? `, ${formData.state}` : ''}
+Mobile: ${formData.mobile}
+${formData.email ? `Email: ${formData.email}` : ''}
+
+Payment: ${paymentMethod === 'upi' ? `UPI (UTR: ${formData.utrNumber})` : 'Cash on Delivery'}
+          `.trim();
+
+          await supabase.from('notifications').insert({
+            user_id: item.seller_id,
+            type: 'new_order',
+            title: 'New Order Received!',
+            content: orderDetailsText,
+            action_url: '/my-listings'
+          });
+        }
       }
 
       if (cartItems.length > 0) {

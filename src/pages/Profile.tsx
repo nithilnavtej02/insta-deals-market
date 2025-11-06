@@ -347,11 +347,11 @@ const Profile = () => {
         {/* Followers/Following */}
         <div className="flex items-center gap-2 mt-6">
           <div onClick={() => setShowFollowers(true)} className="flex-1 text-center cursor-pointer">
-            <p className="text-2xl font-semibold">{profile.followers_count || 0}</p>
+            <p className="text-2xl font-semibold">{profile?.followers_count || 0}</p>
             <p className="text-sm text-muted-foreground">Followers</p>
           </div>
           <div onClick={() => setShowFollowing(true)} className="flex-1 text-center cursor-pointer">
-            <p className="text-2xl font-semibold">{profile.following_count || 0}</p>
+            <p className="text-2xl font-semibold">{profile?.following_count || 0}</p>
             <p className="text-sm text-muted-foreground">Following</p>
           </div>
         </div>
@@ -362,21 +362,21 @@ const Profile = () => {
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Package className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile.items_sold || 0}</p>
+            <p className="text-2xl font-semibold">{profile?.items_sold || 0}</p>
             <p className="text-xs text-muted-foreground">Items Sold</p>
           </div>
           <div className="flex-1">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Star className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile.rating ? profile.rating.toFixed(1) : '0.0'}</p>
+            <p className="text-2xl font-semibold">{profile?.rating ? profile.rating.toFixed(1) : '0.0'}</p>
             <p className="text-xs text-muted-foreground">Rating</p>
           </div>
           <div className="flex-1">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <MessageCircle className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile.total_reviews || 0}</p>
+            <p className="text-2xl font-semibold">{profile?.total_reviews || 0}</p>
             <p className="text-xs text-muted-foreground">Reviews</p>
           </div>
         </div>
