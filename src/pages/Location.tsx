@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,19 +15,57 @@ const Location = () => {
   const { user } = useAuth();
   const { updateLocation } = useCurrentLocation();
 
-  const suggestedLocations = [
-    { id: 1, name: "Mumbai, India", distance: "Current Location" },
-    { id: 2, name: "Delhi, India", distance: "1,415 km away" },
-    { id: 3, name: "Bangalore, India", distance: "984 km away" },
-    { id: 4, name: "Pune, India", distance: "149 km away" },
-    { id: 5, name: "Ahmedabad, India", distance: "492 km away" },
+  const indianLocations = [
+    // Major cities
+    { id: 1, name: "Mumbai, Maharashtra", type: "city" },
+    { id: 2, name: "Delhi", type: "city" },
+    { id: 3, name: "Bengaluru, Karnataka", type: "city" },
+    { id: 4, name: "Hyderabad, Telangana", type: "city" },
+    { id: 5, name: "Ahmedabad, Gujarat", type: "city" },
+    { id: 6, name: "Chennai, Tamil Nadu", type: "city" },
+    { id: 7, name: "Kolkata, West Bengal", type: "city" },
+    { id: 8, name: "Pune, Maharashtra", type: "city" },
+    { id: 9, name: "Jaipur, Rajasthan", type: "city" },
+    { id: 10, name: "Lucknow, Uttar Pradesh", type: "city" },
+    { id: 11, name: "Kanpur, Uttar Pradesh", type: "city" },
+    { id: 12, name: "Nagpur, Maharashtra", type: "city" },
+    { id: 13, name: "Indore, Madhya Pradesh", type: "city" },
+    { id: 14, name: "Thane, Maharashtra", type: "city" },
+    { id: 15, name: "Bhopal, Madhya Pradesh", type: "city" },
+    { id: 16, name: "Visakhapatnam, Andhra Pradesh", type: "city" },
+    { id: 17, name: "Pimpri-Chinchwad, Maharashtra", type: "city" },
+    { id: 18, name: "Patna, Bihar", type: "city" },
+    { id: 19, name: "Vadodara, Gujarat", type: "city" },
+    { id: 20, name: "Ghaziabad, Uttar Pradesh", type: "city" },
+    { id: 21, name: "Ludhiana, Punjab", type: "city" },
+    { id: 22, name: "Agra, Uttar Pradesh", type: "city" },
+    { id: 23, name: "Nashik, Maharashtra", type: "city" },
+    { id: 24, name: "Faridabad, Haryana", type: "city" },
+    { id: 25, name: "Meerut, Uttar Pradesh", type: "city" },
+    { id: 26, name: "Rajkot, Gujarat", type: "city" },
+    { id: 27, name: "Varanasi, Uttar Pradesh", type: "city" },
+    { id: 28, name: "Srinagar, Jammu and Kashmir", type: "city" },
+    { id: 29, name: "Amritsar, Punjab", type: "city" },
+    { id: 30, name: "Chandigarh", type: "city" },
+    { id: 31, name: "Coimbatore, Tamil Nadu", type: "city" },
+    { id: 32, name: "Kochi, Kerala", type: "city" },
+    { id: 33, name: "Guwahati, Assam", type: "city" },
+    { id: 34, name: "Bhubaneswar, Odisha", type: "city" },
+    { id: 35, name: "Dehradun, Uttarakhand", type: "city" },
   ];
 
-  const recentLocations = [
-    { id: 1, name: "Andheri West, Mumbai" },
-    { id: 2, name: "Bandra, Mumbai" },
-    { id: 3, name: "Powai, Mumbai" },
-  ];
+  const [filteredLocations, setFilteredLocations] = useState(indianLocations);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const filtered = indianLocations.filter(loc =>
+        loc.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredLocations(filtered);
+    } else {
+      setFilteredLocations(indianLocations);
+    }
+  }, [searchQuery]);
 
   const handleLocationSelect = async (locationName: string) => {
     if (!user) return;
@@ -43,39 +81,68 @@ const Location = () => {
   };
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      toast.info('Getting your location...');
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const response = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
-            );
-            
-            if (response.ok) {
-              const data = await response.json();
-              const cityName = data.city || data.locality || data.principalSubdivision;
-              const stateName = data.principalSubdivision || data.countryName;
-              const locationName = cityName && stateName 
-                ? `${cityName}, ${stateName}` 
-                : cityName || stateName || "Current Location";
-              handleLocationSelect(locationName);
-            } else {
-              handleLocationSelect("Current Location");
-            }
-          } catch (error) {
-            console.error("Error getting location name:", error);
-            handleLocationSelect("Current Location");
-          }
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          toast.error("Unable to get current location. Please enable location services.");
-        }
-      );
-    } else {
-      toast.error("Geolocation is not supported by this browser");
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
     }
+
+    toast.info('Getting your location...');
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          
+          // Try BigDataCloud API first
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const cityName = data.city || data.locality || data.principalSubdivision;
+            const stateName = data.principalSubdivision;
+            const locationName = cityName && stateName 
+              ? `${cityName}, ${stateName}` 
+              : cityName || stateName || `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+            handleLocationSelect(locationName);
+          } else {
+            // Fallback to coordinates
+            const fallbackName = `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+            handleLocationSelect(fallbackName);
+            toast.info("Using coordinates. You can search for your city above.");
+          }
+        } catch (error) {
+          console.error("Error getting location name:", error);
+          toast.error("Failed to get location details. Please select from the list.");
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        let errorMessage = "Unable to get location. ";
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Please enable location permissions.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out.";
+            break;
+          default:
+            errorMessage += "Please select from the list below.";
+        }
+        
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
@@ -112,38 +179,17 @@ const Location = () => {
           Use current location
         </Button>
 
-        {/* Recent Locations */}
-        <div className="mb-6">
-          <h3 className="font-semibold mb-3">Recent Locations</h3>
-          <div className="space-y-2">
-            {recentLocations.map((location) => (
-              <Card key={location.id} className="cursor-pointer hover:bg-gray-50" 
+        {/* All Indian Cities */}
+        <div>
+          <h3 className="font-semibold mb-3">Indian Cities & States</h3>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {filteredLocations.map((location) => (
+              <Card key={location.id} className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleLocationSelect(location.name)}>
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{location.name}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Suggested Locations */}
-        <div>
-          <h3 className="font-semibold mb-3">Suggested Locations</h3>
-          <div className="space-y-2">
-            {suggestedLocations.map((location) => (
-              <Card key={location.id} className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleLocationSelect(location.name)}>
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{location.name}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{location.distance}</span>
                   </div>
                 </CardContent>
               </Card>

@@ -61,40 +61,79 @@ const Chat = () => {
   };
 
   const fetchConversationData = async () => {
-    if (!conversationId || !user) return;
+    if (!conversationId || !user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { data: userProfile } = await supabase
+      const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        toast({
+          title: "Error",
+          description: "Unable to load your profile",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       if (userProfile) {
         setUserProfileId(userProfile.id);
       }
 
-      const { data: conversation } = await supabase
+      const { data: conversation, error: convError } = await supabase
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
         .single();
+
+      if (convError) {
+        console.error('Conversation error:', convError);
+        toast({
+          title: "Error",
+          description: "Conversation not found",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       if (conversation && userProfile) {
         const otherParticipantId = conversation.participant_1 === userProfile.id 
           ? conversation.participant_2 
           : conversation.participant_1;
 
-        const { data: otherProfile } = await supabase
+        const { data: otherProfile, error: otherProfileError } = await supabase
           .from('profiles')
           .select('id, user_id, username, display_name, avatar_url')
           .eq('id', otherParticipantId)
           .single();
 
+        if (otherProfileError) {
+          console.error('Other profile error:', otherProfileError);
+          toast({
+            title: "Error",
+            description: "Unable to load user profile",
+            variant: "destructive",
+          });
+        }
+
         setOtherUser(otherProfile);
       }
     } catch (error) {
       console.error('Error fetching conversation data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
