@@ -30,12 +30,12 @@ const Auth = () => {
         // Check if input is username, phone, or email
         let loginEmail = email;
         
-        // If not an email format, lookup by username or phone
+        // If not an email format, lookup by username only
         if (!email.includes('@')) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('email')
-            .or(`username.eq.${email},phone.eq.${email},mobile_number.eq.${email}`)
+            .eq('username', email)
             .single();
 
           if (profileError || !profile?.email) {
@@ -91,11 +91,11 @@ const Auth = () => {
         {!isOtpStep ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="email">Email, Username or Phone</Label>
+              <Label htmlFor="email">Email or Username</Label>
               <Input
                 id="email"
                 type="text"
-                placeholder="Enter your email, username or phone"
+                placeholder="Enter your email or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-12"

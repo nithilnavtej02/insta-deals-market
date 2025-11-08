@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMessages, type Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
 import { UserPresence } from "@/components/UserPresence";
+import { useUserPresence } from "@/hooks/useUserPresence";
 
 
 const Chat = () => {
@@ -23,6 +24,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isOnline: otherUserOnline, lastSeen: otherUserLastSeen } = useUserPresence(otherUser?.user_id || '');
 
   useEffect(() => {
     if (conversationId) {
@@ -41,7 +43,12 @@ const Chat = () => {
             filter: `conversation_id=eq.${conversationId}`
           },
           (payload) => {
-            setMessages(prev => [...prev, payload.new as Message]);
+            const newMsg = payload.new as Message;
+            setMessages(prev => [...prev, newMsg]);
+            // Mark as read if it's from the other user
+            if (userProfileId && newMsg.sender_id !== userProfileId) {
+              markMessageAsRead(newMsg.id);
+            }
           }
         )
         .subscribe();
@@ -50,7 +57,7 @@ const Chat = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [conversationId]);
+  }, [conversationId, userProfileId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -77,10 +84,11 @@ const Chat = () => {
         console.error('Profile error:', profileError);
         toast({
           title: "Error",
-          description: "Unable to load your profile",
+          description: "Unable to load your profile. Please sign in again.",
           variant: "destructive",
         });
         setLoading(false);
+        navigate('/auth');
         return;
       }
 
@@ -92,20 +100,44 @@ const Chat = () => {
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
-        .single();
+        .maybeSingle();
 
       if (convError) {
         console.error('Conversation error:', convError);
         toast({
           title: "Error",
-          description: "Conversation not found",
+          description: "Unable to load conversation. Please try again.",
           variant: "destructive",
         });
         setLoading(false);
+        navigate('/messages');
+        return;
+      }
+
+      if (!conversation) {
+        toast({
+          title: "Not Found",
+          description: "This conversation doesn't exist or you don't have access to it.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        navigate('/messages');
         return;
       }
 
       if (conversation && userProfile) {
+        // Verify user is part of this conversation
+        if (conversation.participant_1 !== userProfile.id && conversation.participant_2 !== userProfile.id) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to view this conversation.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          navigate('/messages');
+          return;
+        }
+
         const otherParticipantId = conversation.participant_1 === userProfile.id 
           ? conversation.participant_2 
           : conversation.participant_1;
@@ -120,7 +152,7 @@ const Chat = () => {
           console.error('Other profile error:', otherProfileError);
           toast({
             title: "Error",
-            description: "Unable to load user profile",
+            description: "Unable to load other user's profile",
             variant: "destructive",
           });
         }
@@ -131,16 +163,17 @@ const Chat = () => {
       console.error('Error fetching conversation data:', error);
       toast({
         title: "Error",
-        description: "Failed to load conversation",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+      navigate('/messages');
     } finally {
       setLoading(false);
     }
   };
 
   const fetchMessages = async () => {
-    if (!conversationId) return;
+    if (!conversationId || !userProfileId) return;
 
     try {
       const { data, error } = await supabase
@@ -151,8 +184,31 @@ const Chat = () => {
 
       if (error) throw error;
       setMessages((data || []) as Message[]);
+
+      // Mark unread messages as read
+      const unreadMessages = (data || []).filter(
+        (msg: Message) => !msg.read_at && msg.sender_id !== userProfileId
+      );
+
+      if (unreadMessages.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .in('id', unreadMessages.map((msg: Message) => msg.id));
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
+    }
+  };
+
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
     }
   };
 
@@ -235,7 +291,15 @@ const Chat = () => {
               </UserPresence>
               <div>
                 <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'User'}</h2>
-                <p className="text-xs text-primary">@{otherUser.username || 'unknown'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {otherUserOnline ? (
+                    <span className="text-green-500">● Online</span>
+                  ) : otherUserLastSeen ? (
+                    `Last active ${new Date(otherUserLastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  ) : (
+                    `@${otherUser.username || 'unknown'}`
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -250,9 +314,14 @@ const Chat = () => {
                 isMyMessage ? "bg-primary text-white" : "bg-muted"
               }`}>
                 <p className="text-sm">{msg.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(msg.created_at).toLocaleTimeString()}
-                </p>
+                <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
+                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {isMyMessage && (
+                    <span className="text-xs">
+                      {msg.read_at ? '✓✓' : '✓'}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

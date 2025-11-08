@@ -89,8 +89,8 @@ const Reels = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-black">
-      <div className="lg:flex lg:justify-center lg:items-center lg:min-h-screen lg:bg-black lg:p-4">
-        <div className="w-full lg:max-w-[420px] lg:max-h-[90vh] mx-auto h-screen lg:h-auto lg:rounded-2xl lg:overflow-hidden lg:shadow-2xl">{/* Portrait aspect ratio with max width */}
+      <div className="lg:flex lg:justify-center lg:items-start lg:min-h-screen lg:bg-black lg:p-4 lg:pt-8">
+        <div className="w-full lg:max-w-[420px] mx-auto h-screen lg:h-auto">{/* Mobile-like view without constraints */}
           {/* Header */}
           <div className="px-5 py-4 bg-black">
             <h1 className="text-2xl font-bold text-white">Product Reels</h1>
@@ -128,7 +128,7 @@ const Reels = () => {
                         ref={(el) => (videoRefs.current[reel.id] = el)}
                         src={reel.video_url}
                         poster={reel.thumbnail_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
                         loop
                         playsInline
                         onClick={() => togglePlay(reel.id)}
@@ -154,7 +154,7 @@ const Reels = () => {
                       <img
                         src={reel.thumbnail_url}
                         alt={reel.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Button
