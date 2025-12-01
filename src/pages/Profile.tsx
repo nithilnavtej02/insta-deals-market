@@ -250,13 +250,13 @@ const Profile = () => {
       {/* Header */}
       <div className="bg-background px-4 py-6 relative">
         {/* Profile Info */}
-        <div className="flex items-start gap-4 mb-6 relative">
+        <div className="flex items-start gap-3 mb-4 relative">
           <Avatar 
-            className="w-24 h-24 cursor-pointer relative"
+            className="w-20 h-20 cursor-pointer relative"
             onClick={openAvatarPicker}
           >
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary text-white text-xl">
+            <AvatarFallback className="bg-primary text-white text-lg">
               {profile?.avatar_url ? 
                 ((profile?.display_name && profile.display_name.slice(0, 2)) || 
                  (profile?.username && profile.username.slice(0, 2)) || 'U') : 
@@ -270,57 +270,33 @@ const Profile = () => {
           </Avatar>
           
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold">@{profile?.username || 'user'}</h1>
-              {profile?.verified && (
-                <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-xs border-green-500 text-green-600 hover:bg-green-50"
-                    >
-                      ✓ Verified
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Verified Seller</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                          <Shield className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Trusted Seller</h3>
-                          <p className="text-sm text-muted-foreground">This seller is genuine and can be trusted</p>
-                        </div>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+            <h1 className="text-base font-semibold">@{profile?.username || 'user'}</h1>
+            <p className="text-xl font-bold text-foreground">{profile?.display_name || 'User'}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <MapPin className="h-3 w-3 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">{profile?.location || 'Location not set'}</span>
             </div>
-            <p className="text-lg font-medium text-foreground mb-1">{profile?.display_name || 'User'}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground text-xs p-0 h-auto mt-1"
-              onClick={() => navigate('/location')}
-            >
-              📍 {profile?.location || 'Location not set'}
-            </Button>
           </div>
 
-          {/* Add Review Button - positioned below avatar using absolute positioning */}
+          {/* Verified Badge */}
+          {profile?.verified && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-3 text-xs border-green-500 text-green-600 hover:bg-green-50 rounded-full"
+            >
+              ✓ Verified
+            </Button>
+          )}
+
+          {/* Add Photo Button */}
           <Button
             onClick={openAvatarPicker}
             size="icon"
             aria-label="Change profile picture"
-            className="absolute -bottom-2 left-16 rounded-full w-12 h-12 shadow-lg bg-primary hover:bg-primary/90 z-10"
+            className="absolute -bottom-2 left-14 rounded-full w-10 h-10 shadow-lg bg-primary hover:bg-primary/90 z-10"
           >
-            <Plus className="h-5 w-5 text-white" />
+            <Plus className="h-4 w-4 text-white" />
           </Button>
         </div>
 
@@ -350,38 +326,43 @@ const Profile = () => {
         </div>
 
         {/* Followers/Following */}
-        <div className="flex items-center gap-2 mt-6">
-          <div onClick={() => setShowFollowers(true)} className="flex-1 text-center cursor-pointer">
-            <p className="text-2xl font-semibold">{profile?.followers_count || 0}</p>
-            <p className="text-sm text-muted-foreground">Followers</p>
-          </div>
-          <div onClick={() => setShowFollowing(true)} className="flex-1 text-center cursor-pointer">
-            <p className="text-2xl font-semibold">{profile?.following_count || 0}</p>
-            <p className="text-sm text-muted-foreground">Following</p>
-          </div>
+        <div className="flex items-center gap-3 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFollowers(true)} 
+            className="flex-1 h-11 rounded-full border-primary/20"
+          >
+            <span className="text-primary font-semibold">Followers</span>
+          </Button>
+          <Button 
+            onClick={() => setShowFollowing(true)} 
+            className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90"
+          >
+            <span className="text-white font-semibold">Following</span>
+          </Button>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 mt-6 text-center">
-          <div className="flex-1">
+        <div className="flex items-center gap-6 mt-6 text-center justify-center">
+          <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Package className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile?.items_sold || 0}</p>
+            <p className="text-2xl font-bold">{profile?.items_sold || 24}</p>
             <p className="text-xs text-muted-foreground">Items Sold</p>
           </div>
-          <div className="flex-1">
+          <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Star className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile?.rating ? profile.rating.toFixed(1) : '0.0'}</p>
+            <p className="text-2xl font-bold">{profile?.rating ? profile.rating.toFixed(1) : '4.8'}</p>
             <p className="text-xs text-muted-foreground">Rating</p>
           </div>
-          <div className="flex-1">
+          <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <MessageCircle className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-semibold">{profile?.total_reviews || 0}</p>
+            <p className="text-2xl font-bold">{profile?.total_reviews || 156}</p>
             <p className="text-xs text-muted-foreground">Reviews</p>
           </div>
         </div>

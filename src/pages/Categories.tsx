@@ -46,18 +46,17 @@ const Categories = () => {
                 <div className={cn("w-16 h-16 rounded-full flex items-center justify-center", category.color || "bg-primary")}>
                   <span className="text-2xl">
                     {(() => {
-                      const emojis = {
-                        'Electronics': '📱',
-                        'Fashion': '👔',
-                        'Vehicles': '🚗',
-                        'Home & Garden': '🏠',
-                        'Sports': '⚽',
-                        'Gaming': '🎮',
-                        'Music': '🎵',
-                        'Photography': '📷',
-                        'Baby & Kids': '🍼'
+                      const emojis: Record<string, string> = {
+                        'Automotive': '🏎️',
+                        'Books & Media': '📚',
+                        'Electronics': '💻',
+                        'Fashion': '🛍️',
+                        'Health & Beauty': '👨‍⚕️',
+                        'Home & Garden': '🏡',
+                        'Sports & Outdoors': '🏋️',
+                        'Toys & Games': '🎮'
                       };
-                      return emojis[category.name as keyof typeof emojis] || '📦';
+                      return emojis[category.name] || '📦';
                     })()}
                   </span>
                 </div>
