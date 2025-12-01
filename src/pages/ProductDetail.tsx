@@ -195,19 +195,22 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Image Gallery */}
-      <div className="relative h-80 bg-muted">
-        <img
-          src={product.images?.[0] || '/placeholder.svg'}
-          alt={product.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-          1 / {product.images?.length || 1}
+      {/* Content Container for Desktop/Tablet */}
+      <div className="lg:max-w-6xl lg:mx-auto lg:grid lg:grid-cols-2 lg:gap-8 lg:p-8">
+        {/* Image Gallery */}
+        <div className="relative h-80 lg:h-[600px] bg-muted lg:sticky lg:top-24 lg:rounded-2xl lg:overflow-hidden">
+          <img
+            src={product.images?.[0] || '/placeholder.svg'}
+            alt={product.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+            1 / {product.images?.length || 1}
+          </div>
         </div>
-      </div>
 
-      <div className="p-4 space-y-6">
+        {/* Product Details - Desktop/Tablet optimized */}
+        <div className="p-4 space-y-6 lg:p-0">
         {/* Product Info */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -371,10 +374,11 @@ const ProductDetail = () => {
             <p className="text-sm text-muted-foreground">Posted</p>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Bottom Actions */}
-      <div className="sticky bottom-0 bg-background border-t p-4">
+      <div className="sticky bottom-0 bg-background border-t p-4 lg:relative lg:max-w-6xl lg:mx-auto lg:border-0 lg:pt-0">
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" size="lg" onClick={handleAddToCart}>
             Add to Cart

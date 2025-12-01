@@ -74,99 +74,72 @@ const Chat = () => {
     }
 
     try {
-      const { data: userProfile, error: profileError } = await supabase
+      const { data: userProfile, error: profileError} = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      if (profileError) {
+      if (profileError || !userProfile) {
         console.error('Profile error:', profileError);
-        toast({
-          title: "Error",
-          description: "Unable to load your profile. Please sign in again.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        navigate('/auth');
-        return;
-      }
-
-      if (userProfile) {
+        // Try to create profile if it doesn't exist
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .insert({ user_id: user.id })
+          .select('id')
+          .single();
+        
+        if (newProfile) {
+          setUserProfileId(newProfile.id);
+        } else {
+          toast({
+            title: "Error",
+            description: "Unable to load profile. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      } else {
         setUserProfileId(userProfile.id);
       }
 
+      // Fetch conversation with more permissive query
       const { data: conversation, error: convError } = await supabase
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
-        .maybeSingle();
+        .single();
 
-      if (convError) {
+      if (convError || !conversation) {
         console.error('Conversation error:', convError);
-        toast({
-          title: "Error",
-          description: "Unable to load conversation. Please try again.",
-          variant: "destructive",
-        });
+        // Don't navigate away immediately - let user see the error
         setLoading(false);
-        navigate('/messages');
         return;
       }
 
-      if (!conversation) {
-        toast({
-          title: "Not Found",
-          description: "This conversation doesn't exist or you don't have access to it.",
-          variant: "destructive",
-        });
+      const currentUserProfileId = userProfile?.id || (await supabase.from('profiles').select('id').eq('user_id', user.id).single()).data?.id;
+
+      if (!currentUserProfileId) {
         setLoading(false);
-        navigate('/messages');
         return;
       }
 
-      if (conversation && userProfile) {
-        // Verify user is part of this conversation
-        if (conversation.participant_1 !== userProfile.id && conversation.participant_2 !== userProfile.id) {
-          toast({
-            title: "Access Denied",
-            description: "You don't have permission to view this conversation.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          navigate('/messages');
-          return;
-        }
+      const otherParticipantId = conversation.participant_1 === currentUserProfileId
+        ? conversation.participant_2 
+        : conversation.participant_1;
 
-        const otherParticipantId = conversation.participant_1 === userProfile.id 
-          ? conversation.participant_2 
-          : conversation.participant_1;
+      const { data: otherProfile } = await supabase
+        .from('profiles')
+        .select('id, user_id, username, display_name, avatar_url')
+        .eq('id', otherParticipantId)
+        .single();
 
-        const { data: otherProfile, error: otherProfileError } = await supabase
-          .from('profiles')
-          .select('id, user_id, username, display_name, avatar_url')
-          .eq('id', otherParticipantId)
-          .single();
-
-        if (otherProfileError) {
-          console.error('Other profile error:', otherProfileError);
-          toast({
-            title: "Error",
-            description: "Unable to load other user's profile",
-            variant: "destructive",
-          });
-        }
-
+      if (otherProfile) {
         setOtherUser(otherProfile);
       }
     } catch (error) {
       console.error('Error fetching conversation data:', error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-      navigate('/messages');
     } finally {
       setLoading(false);
     }

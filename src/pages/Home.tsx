@@ -135,9 +135,18 @@ const Home = () => {
           </Button>
         </div>
         <div className="grid grid-cols-4 gap-4">
-          {categories.slice(0, 4).map((category, index) => {
-            const emojis = ['📱', '👔', '🚗', '🏠', '⚽', '🎮', '🎵', '📷', '🍼'];
-            const emoji = emojis[index] || '📦';
+          {categories.slice(0, 4).map((category) => {
+            const emojiMap: Record<string, string> = {
+              'Automotive': '🏎️',
+              'Books & Media': '📚',
+              'Electronics': '💻',
+              'Fashion': '🛍️',
+              'Health & Beauty': '👨‍⚕️',
+              'Home & Garden': '🏡',
+              'Sports & Outdoors': '🏋️',
+              'Toys & Games': '🎮'
+            };
+            const emoji = emojiMap[category.name] || '📦';
             return (
               <div
                 key={category.id}

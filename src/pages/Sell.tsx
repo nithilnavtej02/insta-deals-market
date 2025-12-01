@@ -74,7 +74,7 @@ const Sell = () => {
       }
     }
     
-    setImages(prev => [...prev, ...validFiles].slice(0, 5)); // Max 5 images
+    setImages(prev => [...prev, ...validFiles].slice(0, 10)); // Max 10 images
   };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,8 +110,8 @@ const Sell = () => {
       return;
     }
 
-    if (!formData.title || !formData.price || !formData.description || images.length === 0) {
-      toast.error("Please fill all required fields and add at least one image");
+    if (!formData.title || !formData.price || !formData.description || images.length < 3) {
+      toast.error("Please fill all required fields and add at least 3 images");
       return;
     }
 
@@ -217,7 +217,7 @@ const Sell = () => {
           
           {/* Image Upload */}
           <div>
-            <Label>Photos (Required) - {images.length}/5</Label>
+            <Label>Photos (Required) - {images.length}/10</Label>
             <div className="grid grid-cols-3 gap-3 mt-2">
               {images.map((image, index) => (
                 <div key={index} className="relative aspect-square">
@@ -234,10 +234,15 @@ const Sell = () => {
                   >
                     <X className="h-3 w-3" />
                   </Button>
+                  {index === 0 && (
+                    <div className="absolute bottom-1 left-1 bg-primary text-white px-2 py-0.5 rounded text-xs">
+                      Cover
+                    </div>
+                  )}
                 </div>
               ))}
               
-              {images.length < 5 && (
+              {images.length < 10 && (
                 <Card 
                   className="aspect-square cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => imageInputRef.current?.click()}
@@ -249,6 +254,10 @@ const Sell = () => {
                 </Card>
               )}
             </div>
+            
+            <p className="text-xs text-muted-foreground mt-2">
+              Add 3-10 photos. First photo will be the cover image. Swipeable in product view.
+            </p>
             
             <input
               ref={imageInputRef}
@@ -426,21 +435,24 @@ const Sell = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
+                onClick={async () => {
                   if (navigator.geolocation) {
+                    toast.success('Getting your location...');
                     navigator.geolocation.getCurrentPosition(
-                      (position) => {
+                      async (position) => {
                         const { latitude, longitude } = position.coords;
-                        // In a real app, you'd use a geocoding service to convert coordinates to address
-                        setFormData({...formData, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`});
-                        alert("Current location added!");
+                        // Import reverse geocode function
+                        const { reverseGeocode } = await import('@/utils/locationFormat');
+                        const locationName = await reverseGeocode(latitude, longitude);
+                        setFormData({...formData, location: locationName});
+                        toast.success('Location added successfully!');
                       },
                       (error) => {
-                        alert("Unable to retrieve location. Please enter manually.");
+                        toast.error('Unable to get location. Please enter manually.');
                       }
                     );
                   } else {
-                    alert("Geolocation is not supported by this browser.");
+                    toast.error('Geolocation not supported by your browser.');
                   }
                 }}
                 className="px-3"

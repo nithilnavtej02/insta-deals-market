@@ -64,7 +64,7 @@ const ShareSheet = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[70vh] overflow-y-auto">
+      <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[85vh] overflow-y-auto animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">Share to</h2>
