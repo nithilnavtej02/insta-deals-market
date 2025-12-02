@@ -289,14 +289,14 @@ const Profile = () => {
             </Button>
           )}
 
-          {/* Add Photo Button */}
+          {/* Add Photo Button - Smaller */}
           <Button
             onClick={openAvatarPicker}
             size="icon"
             aria-label="Change profile picture"
-            className="absolute -bottom-2 left-14 rounded-full w-10 h-10 shadow-lg bg-primary hover:bg-primary/90 z-10"
+            className="absolute -bottom-2 left-14 rounded-full w-7 h-7 shadow-lg bg-primary hover:bg-primary/90 z-10"
           >
-            <Plus className="h-4 w-4 text-white" />
+            <Plus className="h-3 w-3 text-white" />
           </Button>
         </div>
 
@@ -342,27 +342,27 @@ const Profile = () => {
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Show only real data */}
         <div className="flex items-center gap-6 mt-6 text-center justify-center">
           <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Package className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-bold">{profile?.items_sold || 24}</p>
+            <p className="text-2xl font-bold">{profile?.items_sold || 0}</p>
             <p className="text-xs text-muted-foreground">Items Sold</p>
           </div>
           <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <Star className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-bold">{profile?.rating ? profile.rating.toFixed(1) : '4.8'}</p>
+            <p className="text-2xl font-bold">{profile?.rating ? profile.rating.toFixed(1) : '0.0'}</p>
             <p className="text-xs text-muted-foreground">Rating</p>
           </div>
           <div>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
               <MessageCircle className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-bold">{profile?.total_reviews || 156}</p>
+            <p className="text-2xl font-bold">{profile?.total_reviews || 0}</p>
             <p className="text-xs text-muted-foreground">Reviews</p>
           </div>
         </div>

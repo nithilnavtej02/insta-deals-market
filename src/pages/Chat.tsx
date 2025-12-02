@@ -1,4 +1,4 @@
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,9 @@ import { useMessages, type Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
 import { UserPresence } from "@/components/UserPresence";
 import { useUserPresence } from "@/hooks/useUserPresence";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { TypingIndicator } from "@/components/TypingIndicator";
+import { useNotifications } from "@/hooks/useNotifications";
 
 
 const Chat = () => {
@@ -23,8 +26,13 @@ const Chat = () => {
   const [otherUser, setOtherUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { isOnline: otherUserOnline, lastSeen: otherUserLastSeen } = useUserPresence(otherUser?.user_id || '');
+  const { isOtherUserTyping, setTyping } = useTypingIndicator(conversationId || '');
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (conversationId) {
@@ -156,18 +164,22 @@ const Chat = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data || []) as Message[]);
+      const typedMessages = (data || []).map(msg => ({
+        ...msg,
+        message_type: (msg.message_type || 'text') as 'text' | 'image' | 'product'
+      })) as Message[];
+      setMessages(typedMessages);
 
       // Mark unread messages as read
-      const unreadMessages = (data || []).filter(
-        (msg: Message) => !msg.read_at && msg.sender_id !== userProfileId
+      const unreadMessages = typedMessages.filter(
+        msg => !msg.read_at && msg.sender_id !== userProfileId
       );
 
       if (unreadMessages.length > 0) {
         await supabase
           .from('messages')
           .update({ read_at: new Date().toISOString() })
-          .in('id', unreadMessages.map((msg: Message) => msg.id));
+          .in('id', unreadMessages.map(msg => msg.id));
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -185,8 +197,20 @@ const Chat = () => {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!message.trim() || !otherUser || !user) return;
+    if ((!message.trim() && !imageFile) || !otherUser || !user) return;
 
     try {
       const { data: userProfile } = await supabase
@@ -202,7 +226,36 @@ const Chat = () => {
         .single();
 
       if (userProfile && otherProfile) {
-        const result = await sendMessage(otherProfile.id, message.trim());
+        let messageContent = message.trim();
+        let messageType: 'text' | 'image' = 'text';
+        
+        // Handle image upload if present
+        if (imageFile) {
+          const fileExt = imageFile.name.split('.').pop();
+          const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, imageFile);
+          
+          if (uploadError) {
+            toast({
+              title: "Error",
+              description: "Failed to upload image",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+          
+          messageContent = publicUrl;
+          messageType = 'image';
+        }
+        
+        const result = await sendMessage(otherProfile.id, messageContent, messageType);
         
         if (result.error) {
           toast({
@@ -212,6 +265,9 @@ const Chat = () => {
           });
         } else {
           setMessage("");
+          setImageFile(null);
+          setImagePreview(null);
+          setTyping(false);
         }
       }
     } catch (error) {
@@ -228,6 +284,17 @@ const Chat = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value);
+    if (e.target.value.trim()) {
+      setTyping(true);
+      // Auto-stop typing after 3 seconds of no typing
+      setTimeout(() => setTyping(false), 3000);
+    } else {
+      setTyping(false);
     }
   };
 
@@ -286,7 +353,15 @@ const Chat = () => {
               <div className={`max-w-xs px-4 py-2 rounded-lg ${
                 isMyMessage ? "bg-primary text-white" : "bg-muted"
               }`}>
-                <p className="text-sm">{msg.content}</p>
+                {msg.message_type === 'image' ? (
+                  <img 
+                    src={msg.content || ''} 
+                    alt="Shared image" 
+                    className="rounded-lg max-w-full h-auto"
+                  />
+                ) : (
+                  <p className="text-sm">{msg.content}</p>
+                )}
                 <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {isMyMessage && (
@@ -299,18 +374,53 @@ const Chat = () => {
             </div>
           );
         })}
+        {isOtherUserTyping && (
+          <div className="flex justify-start">
+            <TypingIndicator />
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       <div className="bg-white border-t p-4">
+        {imagePreview && (
+          <div className="mb-2 relative inline-block">
+            <img src={imagePreview} alt="Preview" className="h-20 rounded-lg" />
+            <Button
+              size="icon"
+              variant="destructive"
+              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+              onClick={() => {
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+            >
+              ×
+            </Button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImageIcon className="h-4 w-4" />
+          </Button>
           <Input 
             value={message} 
-            onChange={(e) => setMessage(e.target.value)} 
+            onChange={handleInputChange} 
             onKeyPress={handleKeyPress}
             placeholder="Type a message..." 
             className="flex-1" 
           />
-          <Button onClick={handleSendMessage} disabled={!message.trim()}>
+          <Button onClick={handleSendMessage} disabled={!message.trim() && !imageFile}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
