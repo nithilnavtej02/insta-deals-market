@@ -213,6 +213,7 @@ export type Database = {
           read_at: string | null
           receiver_id: string
           sender_id: string
+          typing_at: string | null
         }
         Insert: {
           content?: string | null
@@ -225,6 +226,7 @@ export type Database = {
           read_at?: string | null
           receiver_id: string
           sender_id: string
+          typing_at?: string | null
         }
         Update: {
           content?: string | null
@@ -237,6 +239,7 @@ export type Database = {
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
+          typing_at?: string | null
         }
         Relationships: [
           {
@@ -767,6 +770,45 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      typing_indicators: {
+        Row: {
+          conversation_id: string
+          id: string
+          is_typing: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          is_typing?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          is_typing?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "typing_indicators_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "typing_indicators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

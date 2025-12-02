@@ -12,10 +12,13 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useFollows } from "@/hooks/useFollows";
 import { useMessages } from "@/hooks/useMessages";
+import { useReviews } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
+import { ImageCarousel } from "@/components/ImageCarousel";
+import { ReviewCard } from "@/components/ReviewCard";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -25,6 +28,7 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { isFollowing, followUser, unfollowUser } = useFollows();
   const { sendMessage } = useMessages();
+  const { reviews: sellerReviews } = useReviews();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -196,17 +200,13 @@ const ProductDetail = () => {
       </div>
 
       {/* Content Container for Desktop/Tablet */}
-      <div className="lg:max-w-6xl lg:mx-auto lg:grid lg:grid-cols-2 lg:gap-8 lg:p-8">
-        {/* Image Gallery */}
-        <div className="relative h-80 lg:h-[600px] bg-muted lg:sticky lg:top-24 lg:rounded-2xl lg:overflow-hidden">
-          <img
-            src={product.images?.[0] || '/placeholder.svg'}
+      <div className="lg:max-w-7xl lg:mx-auto lg:grid lg:grid-cols-[1.2fr,1fr] lg:gap-12 lg:p-8 lg:py-12">
+        {/* Image Gallery - Full screen on desktop */}
+        <div className="relative h-96 md:h-[500px] lg:h-[700px] bg-muted lg:sticky lg:top-24 lg:rounded-3xl lg:overflow-hidden shadow-2xl">
+          <ImageCarousel 
+            images={product.images || ['/placeholder.svg']} 
             alt={product.title}
-            className="w-full h-full object-cover"
           />
-          <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-            1 / {product.images?.length || 1}
-          </div>
         </div>
 
         {/* Product Details - Desktop/Tablet optimized */}
@@ -374,6 +374,20 @@ const ProductDetail = () => {
             <p className="text-sm text-muted-foreground">Posted</p>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        {sellerReviews.length > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-4">Seller Reviews</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {sellerReviews.slice(0, 5).map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         </div>
       </div>
 

@@ -122,6 +122,7 @@ export function useNotifications() {
 
   return {
     notifications,
+    unreadCount: notifications.filter(n => !n.read_at).length,
     loading,
     markAsRead,
     markAllAsRead,
