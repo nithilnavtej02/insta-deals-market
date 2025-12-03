@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus } from "lucide-react";
+import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus, Eye, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +10,6 @@ import { useProducts } from "@/hooks/useProducts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useFollows } from "@/hooks/useFollows";
-import { useMessages } from "@/hooks/useMessages";
 import { useReviews } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +17,7 @@ import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { ReviewCard } from "@/components/ReviewCard";
+import { generateRandomViews, generateRandomLikes, formatNumber, getRandomAvatarEmoji } from "@/utils/randomStats";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -27,7 +26,6 @@ const ProductDetail = () => {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
   const { isFollowing, followUser, unfollowUser } = useFollows();
-  const { sendMessage } = useMessages();
   const { reviews: sellerReviews } = useReviews();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +43,10 @@ const ProductDetail = () => {
   }, [id, fetchProductById]);
 
   const isProductLiked = product ? isFavorite(product.id) : false;
+
+  // Generate random stats for display
+  const randomViews = product ? generateRandomViews(product.id) : 0;
+  const randomLikes = product ? generateRandomLikes(product.id) : 0;
 
   const handleToggleFavorite = async () => {
     if (!product) return;
@@ -110,7 +112,6 @@ const ProductDetail = () => {
     if (!product?.seller_id) return;
     
     try {
-      // First, get the current user's profile
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('Please sign in to chat');
@@ -128,7 +129,6 @@ const ProductDetail = () => {
         return;
       }
 
-      // Check if conversation already exists
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
@@ -136,10 +136,8 @@ const ProductDetail = () => {
         .single();
 
       if (existingConv) {
-        // Navigate to existing conversation
         navigate(`/chat/${existingConv.id}`);
       } else {
-        // Create new conversation
         const { data: newConv, error } = await supabase
           .from('conversations')
           .insert({
@@ -150,7 +148,6 @@ const ProductDetail = () => {
           .single();
 
         if (error) throw error;
-        
         navigate(`/chat/${newConv.id}`);
       }
     } catch (error) {
@@ -169,230 +166,219 @@ const ProductDetail = () => {
     }
   };
 
+  // Parse key features if available
+  const keyFeatures = product.key_features || [];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b px-4 py-3 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <span className="text-sm text-muted-foreground">Back to Products</span>
+        </div>
         
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleToggleFavorite}
-          >
+          <Button variant="ghost" size="icon" onClick={handleToggleFavorite}>
             <Heart className={`h-5 w-5 ${isProductLiked ? 'fill-red-500 text-red-500' : ''}`} />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowShareDialog(true)}
-          >
+          <Button variant="ghost" size="icon" onClick={() => setShowShareDialog(true)}>
             <Share2 className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Content Container for Desktop/Tablet */}
-      <div className="lg:max-w-7xl lg:mx-auto lg:grid lg:grid-cols-[1.2fr,1fr] lg:gap-12 lg:p-8 lg:py-12">
-        {/* Image Gallery - Full screen on desktop */}
-        <div className="relative h-96 md:h-[500px] lg:h-[700px] bg-muted lg:sticky lg:top-24 lg:rounded-3xl lg:overflow-hidden shadow-2xl">
+      {/* Desktop/Tablet Layout */}
+      <div className="lg:max-w-7xl lg:mx-auto lg:grid lg:grid-cols-[1.2fr,1fr] lg:gap-8 lg:p-6">
+        {/* Image Section - Left side on desktop */}
+        <div className="h-[400px] md:h-[500px] lg:h-[600px] lg:sticky lg:top-20">
           <ImageCarousel 
             images={product.images || ['/placeholder.svg']} 
             alt={product.title}
+            showThumbnails={true}
           />
         </div>
 
-        {/* Product Details - Desktop/Tablet optimized */}
+        {/* Product Details - Right side on desktop */}
         <div className="p-4 space-y-6 lg:p-0">
-        {/* Product Info */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold">{product.title}</h1>
-            <Badge variant="secondary">{product.condition}</Badge>
+          {/* Category Badge */}
+          <div className="text-sm font-medium text-primary uppercase tracking-wide">
+            {product.categories?.name || 'PRODUCT'}
           </div>
-          
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-3xl font-bold text-primary">${product.price}</span>
+
+          {/* Title */}
+          <h1 className="text-2xl lg:text-3xl font-bold">{product.title}</h1>
+
+          {/* Price */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-primary">₹{product.price}</span>
             {product.original_price && (
               <>
-                <span className="text-lg text-muted-foreground line-through">${product.original_price}</span>
-                <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
+                <span className="text-lg text-muted-foreground line-through">₹{product.original_price}</span>
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
                   {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
                 </Badge>
               </>
             )}
           </div>
-          
+
+          {/* Description */}
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
-        </div>
 
-        {/* Specifications */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-3">Product Details</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Category:</span>
-                <span className="font-medium">{product.categories?.name || 'N/A'}</span>
+          {/* Key Features */}
+          {keyFeatures.length > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-3">Key Features</h3>
+                <ul className="space-y-2">
+                  {keyFeatures.map((feature: string, index: number) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Product Details */}
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3">Product Details</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Category:</span>
+                  <span className="font-medium">{product.categories?.name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Condition:</span>
+                  <span className="font-medium">{product.condition || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Brand:</span>
+                  <span className="font-medium">{product.brand || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Location:</span>
+                  <span className="font-medium">{formatLocation(product.location)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Condition:</span>
-                <span className="font-medium">{product.condition || 'N/A'}</span>
+            </CardContent>
+          </Card>
+
+          {/* Stats */}
+          <div className="flex items-center justify-center gap-8 py-4 border rounded-lg bg-muted/30">
+            <div className="text-center">
+              <div className="flex items-center gap-1 justify-center">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <span className="text-lg font-bold">{formatNumber(randomViews)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Brand:</span>
-                <span className="font-medium">{product.brand || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Location:</span>
-                <span className="font-medium">{formatLocation(product.location)}</span>
-              </div>
+              <p className="text-xs text-muted-foreground">Views</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-center">
+              <div className="flex items-center gap-1 justify-center">
+                <Heart className="h-4 w-4 text-muted-foreground" />
+                <span className="text-lg font-bold">{formatNumber(randomLikes)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Likes</p>
+            </div>
+            <div className="text-center">
+              <span className="text-lg font-bold">{new Date(product.created_at).toLocaleDateString()}</span>
+              <p className="text-xs text-muted-foreground">Posted</p>
+            </div>
+          </div>
 
-        {/* Seller Info */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={product.profiles?.avatar_url} />
-                  <AvatarFallback>{product.profiles?.display_name?.[0] || 'U'}</AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold">{product.profiles?.display_name || 'Seller'}</h3>
-                    {product.profiles?.verified && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 py-0 text-xs bg-green-100 text-green-700 hover:bg-green-200"
-                          >
-                            <Shield className="h-3 w-3 mr-1" />
-                            Verified
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                              <Shield className="h-5 w-5 text-green-600" />
-                              Verified Seller
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground">
-                              This seller is genuine and can be trusted. They have been verified by our team.
-                            </p>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">@{product.profiles?.username || 'user'}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
-                    <div className="flex items-center gap-1">
+          {/* Seller Info */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={product.profiles?.avatar_url} />
+                    <AvatarFallback>
+                      {product.profiles?.avatar_url ? 
+                        (product.profiles?.display_name?.[0] || 'U') : 
+                        getRandomAvatarEmoji(product.profiles?.username || 'user')
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold">{product.profiles?.display_name || 'Seller'}</h3>
+                      {product.profiles?.verified && (
+                        <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">@{product.profiles?.username || 'user'}</p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <MapPin className="h-3 w-3" />
                       <span>{formatLocation(product.location)}</span>
                     </div>
                   </div>
                 </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      if (product?.profiles?.username) {
+                        navigate(`/u/${product.profiles.username}`);
+                      } else if (product?.seller_id) {
+                        navigate(`/profile/${product.seller_id}`);
+                      }
+                    }}
+                  >
+                    View Profile
+                  </Button>
+                  <Button
+                    variant={isFollowing(product.seller_id) ? "secondary" : "default"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleFollow}
+                  >
+                    {isFollowing(product.seller_id) ? (
+                      <><UserMinus className="h-4 w-4 mr-2" />Unfollow</>
+                    ) : (
+                      <><UserPlus className="h-4 w-4 mr-2" />Follow</>
+                    )}
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    if (product?.profiles?.username) {
-                      navigate(`/u/${product.profiles.username}`);
-                    } else if (product?.seller_id) {
-                      navigate(`/profile/${product.seller_id}`);
-                    } else {
-                      toast.error('Unable to view profile');
-                    }
-                  }}
-                >
-                  View Profile
-                </Button>
-                <Button
-                  variant={isFollowing(product.seller_id) ? "secondary" : "default"}
-                  size="sm"
-                  className="flex-1"
-                  onClick={handleFollow}
-                >
-                  {isFollowing(product.seller_id) ? (
-                    <>
-                      <UserMinus className="h-4 w-4 mr-2" />
-                      Unfollow
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Follow
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
 
-            {/* Contact Button */}
-            <Button
-              variant="outline"
-              className="w-full flex items-center gap-2"
-              onClick={handleChat}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chat with Seller
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Product Stats */}
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-lg font-bold">{product.views || 0}</p>
-            <p className="text-sm text-muted-foreground">Views</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold">{product.likes || 0}</p>
-            <p className="text-sm text-muted-foreground">Likes</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold">{new Date(product.created_at).toLocaleDateString()}</p>
-            <p className="text-sm text-muted-foreground">Posted</p>
-          </div>
-        </div>
-
-        {/* Reviews Section */}
-        {sellerReviews.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-4">Seller Reviews</h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {sellerReviews.slice(0, 5).map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
-              </div>
+              <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleChat}>
+                <MessageCircle className="h-4 w-4" />
+                Chat with Seller
+              </Button>
             </CardContent>
           </Card>
-        )}
+
+          {/* Reviews */}
+          {sellerReviews.length > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-4">Seller Reviews</h3>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {sellerReviews.slice(0, 5).map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
       {/* Bottom Actions */}
-      <div className="sticky bottom-0 bg-background border-t p-4 lg:relative lg:max-w-6xl lg:mx-auto lg:border-0 lg:pt-0">
+      <div className="sticky bottom-0 bg-background border-t p-4 lg:max-w-7xl lg:mx-auto">
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" size="lg" onClick={handleAddToCart}>
             Add to Cart
@@ -403,15 +389,13 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Share Dialog */}
       <ShareDialog
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
         title={product.title}
         url={window.location.href}
-        text={`Check out this ${product.title} for $${product.price}`}
+        text={`Check out this ${product.title} for ₹${product.price}`}
       />
-
     </div>
   );
 };

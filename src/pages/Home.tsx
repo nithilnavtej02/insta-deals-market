@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Bell, Search, Users, Car, Home as HomeIcon, Gamepad2, Shirt, Laptop, Music, Camera, Baby, MoreHorizontal, Share2 } from "lucide-react";
+import { Heart, MapPin, Bell, Search, Users, Car, Home as HomeIcon, Gamepad2, Shirt, Laptop, Music, Camera, Baby, MoreHorizontal, Share2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -15,6 +15,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
 import { toast } from "sonner";
+import { generateRandomViews, generateRandomLikes, formatNumber } from "@/utils/randomStats";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -27,14 +28,12 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [shareDialog, setShareDialog] = useState<{isOpen: boolean, product: any}>({isOpen: false, product: null});
 
-  // Get user's location on mount
   useEffect(() => {
     if (!location || location === "New York") {
       getCurrentLocation();
     }
   }, []);
 
-  // Category icons mapping
   const categoryIcons = {
     Electronics: Laptop,
     Fashion: Shirt,
@@ -172,73 +171,86 @@ const Home = () => {
           ) : products.length === 0 ? (
             <div className="col-span-full text-center py-8 text-muted-foreground">No products available</div>
           ) : (
-            products.map((product) => (
-              <div
-                key={product.id}
-                className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <div className="relative">
-                  <img
-                    src={product.images?.[0] || "/placeholder.svg"}
-                    alt={product.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm",
-                      isFavorite(product.id) && "text-red-500 hover:text-red-600"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLike(product.id);
-                    }}
-                  >
-                    <Heart className={cn("h-4 w-4", isFavorite(product.id) && "fill-red-500")} />
-                  </Button>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg line-clamp-2">{product.title}</h3>
-                  <p className="text-xl font-bold text-primary">${product.price}</p>
-                  <div className="mt-2">
-                    <p className="text-sm text-muted-foreground line-clamp-1">{formatLocation(product.location)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {product.profiles?.username || 'Seller'} • ⭐ {4.5}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
+            products.map((product) => {
+              const randomViews = generateRandomViews(product.id);
+              const randomLikes = generateRandomLikes(product.id);
+              
+              return (
+                <div
+                  key={product.id}
+                  className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <div className="relative">
+                    <img
+                      src={product.images?.[0] || "/placeholder.svg"}
+                      alt={product.title}
+                      className="w-full h-48 object-cover"
+                    />
                     <Button
                       variant="ghost"
                       size="icon-sm"
+                      className={cn(
+                        "absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm",
+                        isFavorite(product.id) && "text-red-500 hover:text-red-600"
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShareDialog({isOpen: true, product});
+                        toggleLike(product.id);
                       }}
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Heart className={cn("h-4 w-4", isFavorite(product.id) && "fill-red-500")} />
                     </Button>
-                    <span className="text-sm text-muted-foreground">{product.likes} likes</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(product.created_at).toLocaleDateString()}
-                  </p>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg line-clamp-2">{product.title}</h3>
+                    <p className="text-xl font-bold text-primary">₹{product.price}</p>
+                    <div className="mt-2">
+                      <p className="text-sm text-muted-foreground line-clamp-1">{formatLocation(product.location)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {product.profiles?.username || 'Seller'} • ⭐ {product.profiles?.rating?.toFixed(1) || '4.5'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {formatNumber(randomViews)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          {formatNumber(randomLikes)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShareDialog({isOpen: true, product});
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(product.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* Share Dialog */}
       {shareDialog.product && (
         <ShareDialog
           isOpen={shareDialog.isOpen}
           onClose={() => setShareDialog({isOpen: false, product: null})}
           title={shareDialog.product.title}
           url={`${window.location.origin}/product/${shareDialog.product.id}`}
-          text={`Check out this ${shareDialog.product.title} for $${shareDialog.product.price}`}
+          text={`Check out this ${shareDialog.product.title} for ₹${shareDialog.product.price}`}
         />
       )}
 
