@@ -208,7 +208,7 @@ const Home = () => {
                     <div className="mt-2">
                       <p className="text-sm text-muted-foreground line-clamp-1">{formatLocation(product.location)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {product.profiles?.username || 'Seller'} • ⭐ {product.profiles?.rating?.toFixed(1) || '4.5'}
+                        {product.profiles?.username || 'Seller'}
                       </p>
                     </div>
                     <div className="flex items-center justify-between mt-2">

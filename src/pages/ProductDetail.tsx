@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
-import { ImageCarousel } from "@/components/ImageCarousel";
+
 import { ReviewCard } from "@/components/ReviewCard";
 import { generateRandomViews, generateRandomLikes, formatNumber, getRandomAvatarEmoji } from "@/utils/randomStats";
 
@@ -30,6 +30,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -170,7 +171,7 @@ const ProductDetail = () => {
   const keyFeatures = product.key_features || [];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -191,36 +192,57 @@ const ProductDetail = () => {
       </div>
 
       {/* Desktop/Tablet Layout */}
-      <div className="lg:max-w-7xl lg:mx-auto lg:grid lg:grid-cols-[1.2fr,1fr] lg:gap-8 lg:p-6">
+      <div className="lg:max-w-6xl lg:mx-auto lg:grid lg:grid-cols-[1fr,1fr] lg:gap-12 lg:p-8">
         {/* Image Section - Left side on desktop */}
-        <div className="h-[400px] md:h-[500px] lg:h-[600px] lg:sticky lg:top-20">
-          <ImageCarousel 
-            images={product.images || ['/placeholder.svg']} 
-            alt={product.title}
-            showThumbnails={true}
-          />
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          {/* Main Image */}
+          <div className="border rounded-lg overflow-hidden bg-muted/20 aspect-square lg:aspect-[4/3]">
+            <img
+              src={product.images?.[currentImageIndex] || '/placeholder.svg'}
+              alt={product.title}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          
+          {/* Thumbnails below main image */}
+          {product.images && product.images.length > 1 && (
+            <div className="flex gap-2 p-3 overflow-x-auto">
+              {product.images.map((image: string, index: number) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentImageIndex 
+                      ? 'border-primary ring-2 ring-primary/30' 
+                      : 'border-muted hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Details - Right side on desktop */}
-        <div className="p-4 space-y-6 lg:p-0">
+        <div className="p-4 space-y-5 lg:p-0">
           {/* Category Badge */}
-          <div className="text-sm font-medium text-primary uppercase tracking-wide">
+          <div className="text-sm font-semibold text-primary uppercase tracking-wider">
             {product.categories?.name || 'PRODUCT'}
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl lg:text-3xl font-bold">{product.title}</h1>
+          <h1 className="text-2xl lg:text-4xl font-bold leading-tight">{product.title}</h1>
 
           {/* Price */}
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-primary">₹{product.price}</span>
+          <div className="flex items-baseline gap-3">
+            <span className="text-2xl lg:text-3xl font-bold text-primary">₹{product.price?.toLocaleString()}</span>
             {product.original_price && (
-              <>
-                <span className="text-lg text-muted-foreground line-through">₹{product.original_price}</span>
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
-                  {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
-                </Badge>
-              </>
+              <span className="text-lg text-muted-foreground line-through">₹{product.original_price?.toLocaleString()}</span>
             )}
           </div>
 
@@ -229,14 +251,14 @@ const ProductDetail = () => {
 
           {/* Key Features */}
           {keyFeatures.length > 0 && (
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-3">Key Features</h3>
-                <ul className="space-y-2">
+            <Card className="border">
+              <CardContent className="p-5">
+                <h3 className="font-bold text-lg mb-4">Key Features</h3>
+                <ul className="space-y-3">
                   {keyFeatures.map((feature: string, index: number) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>{feature}</span>
+                    <li key={index} className="flex items-center gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span className="text-foreground">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -244,52 +266,46 @@ const ProductDetail = () => {
             </Card>
           )}
 
+          {/* Stats */}
+          <div className="flex items-center gap-6 py-3">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{formatNumber(randomViews)} views</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Heart className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{formatNumber(randomLikes)} likes</span>
+            </div>
+          </div>
+
           {/* Product Details */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-3">Product Details</h3>
-              <div className="space-y-2">
+          <Card className="border">
+            <CardContent className="p-5">
+              <h3 className="font-bold text-lg mb-4">Product Details</h3>
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category:</span>
+                  <span className="text-muted-foreground">Category</span>
                   <span className="font-medium">{product.categories?.name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Condition:</span>
+                  <span className="text-muted-foreground">Condition</span>
                   <span className="font-medium">{product.condition || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Brand:</span>
+                  <span className="text-muted-foreground">Brand</span>
                   <span className="font-medium">{product.brand || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Location:</span>
+                  <span className="text-muted-foreground">Location</span>
                   <span className="font-medium">{formatLocation(product.location)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Posted</span>
+                  <span className="font-medium">{new Date(product.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Stats */}
-          <div className="flex items-center justify-center gap-8 py-4 border rounded-lg bg-muted/30">
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                <span className="text-lg font-bold">{formatNumber(randomViews)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Views</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <Heart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-lg font-bold">{formatNumber(randomLikes)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Likes</p>
-            </div>
-            <div className="text-center">
-              <span className="text-lg font-bold">{new Date(product.created_at).toLocaleDateString()}</span>
-              <p className="text-xs text-muted-foreground">Posted</p>
-            </div>
-          </div>
 
           {/* Seller Info */}
           <Card>
