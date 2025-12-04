@@ -4,18 +4,17 @@ import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, User
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProducts } from "@/hooks/useProducts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useFollows } from "@/hooks/useFollows";
 import { useReviews } from "@/hooks/useReviews";
+import { useUsdRate } from "@/hooks/useUsdRate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
-
 import { ReviewCard } from "@/components/ReviewCard";
 import { generateRandomViews, generateRandomLikes, formatNumber, getRandomAvatarEmoji } from "@/utils/randomStats";
 
@@ -27,6 +26,7 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { isFollowing, followUser, unfollowUser } = useFollows();
   const { reviews: sellerReviews } = useReviews();
+  const { convertToUsd } = useUsdRate();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -44,8 +44,6 @@ const ProductDetail = () => {
   }, [id, fetchProductById]);
 
   const isProductLiked = product ? isFavorite(product.id) : false;
-
-  // Generate random stats for display
   const randomViews = product ? generateRandomViews(product.id) : 0;
   const randomLikes = product ? generateRandomLikes(product.id) : 0;
 
@@ -167,19 +165,20 @@ const ProductDetail = () => {
     }
   };
 
-  // Parse key features if available
   const keyFeatures = product.key_features || [];
+  const priceInUsd = product.price ? convertToUsd(product.price) : 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+      {/* Simple Header */}
       <div className="sticky top-0 z-50 bg-background border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <span className="text-sm text-muted-foreground">Back to Products</span>
-        </div>
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="text-sm font-medium">Back to Products</span>
+        </button>
         
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={handleToggleFavorite}>
@@ -191,12 +190,12 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Desktop/Tablet Layout */}
-      <div className="lg:max-w-6xl lg:mx-auto lg:grid lg:grid-cols-[1fr,1fr] lg:gap-12 lg:p-8">
-        {/* Image Section - Left side on desktop */}
+      {/* Main Content - 2 Column Layout on Desktop */}
+      <div className="max-w-7xl mx-auto lg:grid lg:grid-cols-2 lg:gap-8 lg:p-8">
+        {/* Left Column - Images */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           {/* Main Image */}
-          <div className="border rounded-lg overflow-hidden bg-muted/20 aspect-square lg:aspect-[4/3]">
+          <div className="border rounded-xl overflow-hidden bg-muted/10 aspect-square">
             <img
               src={product.images?.[currentImageIndex] || '/placeholder.svg'}
               alt={product.title}
@@ -204,17 +203,17 @@ const ProductDetail = () => {
             />
           </div>
           
-          {/* Thumbnails below main image */}
+          {/* Thumbnails */}
           {product.images && product.images.length > 1 && (
-            <div className="flex gap-2 p-3 overflow-x-auto">
+            <div className="flex gap-2 p-4 overflow-x-auto">
               {product.images.map((image: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`flex-shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                     index === currentImageIndex 
                       ? 'border-primary ring-2 ring-primary/30' 
-                      : 'border-muted hover:border-muted-foreground/30'
+                      : 'border-border hover:border-muted-foreground/50'
                   }`}
                 >
                   <img
@@ -228,36 +227,42 @@ const ProductDetail = () => {
           )}
         </div>
 
-        {/* Product Details - Right side on desktop */}
-        <div className="p-4 space-y-5 lg:p-0">
-          {/* Category Badge */}
-          <div className="text-sm font-semibold text-primary uppercase tracking-wider">
+        {/* Right Column - Product Details */}
+        <div className="p-4 lg:p-0 space-y-6">
+          {/* Category */}
+          <div className="text-sm font-bold text-primary uppercase tracking-wider">
             {product.categories?.name || 'PRODUCT'}
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl lg:text-4xl font-bold leading-tight">{product.title}</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+            {product.title}
+          </h1>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-3">
-            <span className="text-2xl lg:text-3xl font-bold text-primary">₹{product.price?.toLocaleString()}</span>
-            {product.original_price && (
-              <span className="text-lg text-muted-foreground line-through">₹{product.original_price?.toLocaleString()}</span>
-            )}
+          {/* Price with USD */}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-3xl lg:text-4xl font-bold text-primary">
+              ₹{product.price?.toLocaleString()}
+            </span>
+            <span className="text-xl lg:text-2xl font-semibold text-blue-600">
+              (${priceInUsd.toLocaleString()})
+            </span>
           </div>
 
           {/* Description */}
-          <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+          <p className="text-muted-foreground text-base leading-relaxed">
+            {product.description}
+          </p>
 
-          {/* Key Features */}
+          {/* Key Features Card */}
           {keyFeatures.length > 0 && (
-            <Card className="border">
-              <CardContent className="p-5">
+            <Card className="border rounded-xl">
+              <CardContent className="p-6">
                 <h3 className="font-bold text-lg mb-4">Key Features</h3>
                 <ul className="space-y-3">
                   {keyFeatures.map((feature: string, index: number) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-foreground">{feature}</span>
                     </li>
                   ))}
@@ -267,20 +272,20 @@ const ProductDetail = () => {
           )}
 
           {/* Stats */}
-          <div className="flex items-center gap-6 py-3">
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-6 py-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Eye className="h-4 w-4" />
               <span className="text-sm">{formatNumber(randomViews)} views</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Heart className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Heart className="h-4 w-4" />
               <span className="text-sm">{formatNumber(randomLikes)} likes</span>
             </div>
           </div>
 
-          {/* Product Details */}
-          <Card className="border">
-            <CardContent className="p-5">
+          {/* Product Details Card */}
+          <Card className="border rounded-xl">
+            <CardContent className="p-6">
               <h3 className="font-bold text-lg mb-4">Product Details</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -289,7 +294,7 @@ const ProductDetail = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Condition</span>
-                  <span className="font-medium">{product.condition || 'N/A'}</span>
+                  <span className="font-medium capitalize">{product.condition?.replace('_', ' ') || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Brand</span>
@@ -307,14 +312,14 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Seller Info */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3 mb-4">
+          {/* Seller Info Card */}
+          <Card className="border rounded-xl">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <Avatar>
+                  <Avatar className="h-12 w-12">
                     <AvatarImage src={product.profiles?.avatar_url} />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-lg">
                       {product.profiles?.avatar_url ? 
                         (product.profiles?.display_name?.[0] || 'U') : 
                         getRandomAvatarEmoji(product.profiles?.username || 'user')
@@ -324,7 +329,7 @@ const ProductDetail = () => {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold">{product.profiles?.display_name || 'Seller'}</h3>
+                      <h3 className="font-semibold text-lg">{product.profiles?.display_name || 'Seller'}</h3>
                       {product.profiles?.verified && (
                         <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200">
                           <Shield className="h-3 w-3 mr-1" />
@@ -368,20 +373,20 @@ const ProductDetail = () => {
                     )}
                   </Button>
                 </div>
-              </div>
 
-              <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleChat}>
-                <MessageCircle className="h-4 w-4" />
-                Chat with Seller
-              </Button>
+                <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleChat}>
+                  <MessageCircle className="h-4 w-4" />
+                  Chat with Seller
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
           {/* Reviews */}
           {sellerReviews.length > 0 && (
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4">Seller Reviews</h3>
+            <Card className="border rounded-xl">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4">Seller Reviews</h3>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {sellerReviews.slice(0, 5).map((review) => (
                     <ReviewCard key={review.id} review={review} />
@@ -393,13 +398,13 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Bottom Actions */}
-      <div className="sticky bottom-0 bg-background border-t p-4 lg:max-w-7xl lg:mx-auto">
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" size="lg" onClick={handleAddToCart}>
+      {/* Bottom Actions - Fixed */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-3">
+          <Button variant="outline" size="lg" onClick={handleAddToCart} className="h-12">
             Add to Cart
           </Button>
-          <Button size="lg" onClick={() => navigate(`/checkout?product=${product.id}`)}>
+          <Button size="lg" onClick={() => navigate(`/checkout?product=${product.id}`)} className="h-12">
             Buy Now
           </Button>
         </div>

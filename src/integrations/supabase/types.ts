@@ -425,6 +425,7 @@ export type Database = {
           featured: boolean | null
           id: string
           images: string[] | null
+          key_features: string[] | null
           likes: number | null
           location: string | null
           original_price: number | null
@@ -447,6 +448,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          key_features?: string[] | null
           likes?: number | null
           location?: string | null
           original_price?: number | null
@@ -469,6 +471,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          key_features?: string[] | null
           likes?: number | null
           location?: string | null
           original_price?: number | null

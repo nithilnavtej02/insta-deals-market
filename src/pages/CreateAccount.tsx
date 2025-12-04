@@ -26,20 +26,16 @@ const CreateAccount = () => {
   const [validation, setValidation] = useState<{
     username: { checking: boolean; available: boolean | null };
     email: { checking: boolean; available: boolean | null };
-    phone: { checking: boolean; available: boolean | null };
   }>({
     username: { checking: false, available: null },
-    email: { checking: false, available: null },
-    phone: { checking: false, available: null }
+    email: { checking: false, available: null }
   });
 
   const handleInputChange = (field: string, value: string) => {
-    // Sanitize input to prevent XSS
     const sanitizedValue = sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     
-    // Trigger validation for username, email, phone
-    if (field === 'username' || field === 'email' || field === 'phone') {
+    if (field === 'username' || field === 'email') {
       setValidation(prev => ({
         ...prev,
         [field]: { checking: true, available: null }
@@ -47,7 +43,6 @@ const CreateAccount = () => {
     }
   };
 
-  // Debounced validation effect
   useEffect(() => {
     const timer = setTimeout(() => {
       if (formData.username && validation.username.checking) {
@@ -56,15 +51,12 @@ const CreateAccount = () => {
       if (formData.email && validation.email.checking) {
         validateField('email', formData.email);
       }
-      if (formData.phone && validation.phone.checking) {
-        validateField('phone', formData.phone);
-      }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.username, formData.email, formData.phone]);
+  }, [formData.username, formData.email]);
 
-  const validateField = async (field: 'username' | 'email' | 'phone', value: string) => {
+  const validateField = async (field: 'username' | 'email', value: string) => {
     if (!value) return;
 
     try {
@@ -90,8 +82,15 @@ const CreateAccount = () => {
   };
 
   const handleCreateAccount = async () => {
-    if (!formData.username || !formData.phone || !formData.password) {
-      toast.error("Please fill in all required fields");
+    if (!formData.username || !formData.email || !formData.password) {
+      toast.error("Please fill in all required fields (username, email, password)");
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -113,24 +112,21 @@ const CreateAccount = () => {
 
     setLoading(true);
     try {
-      // Use email if provided, otherwise generate a placeholder
-      const emailToUse = formData.email || `${formData.username}@temp.local`;
-      
-      const { data, error } = await signUp(emailToUse, formData.password, {
+      const { data, error } = await signUp(formData.email, formData.password, {
         username: formData.username,
-        email: formData.email || null,
-        phone: formData.countryCode + formData.phone,
-        mobile_number: formData.countryCode + formData.phone
+        email: formData.email,
+        phone: formData.phone ? formData.countryCode + formData.phone : null,
+        mobile_number: formData.phone ? formData.countryCode + formData.phone : null
       });
 
       if (error) {
         if (error.message.includes('already registered')) {
-          toast.error("Username or phone already exists");
+          toast.error("Email already exists");
         } else {
           toast.error(error.message);
         }
       } else {
-        toast.success("Account created successfully!");
+        toast.success("Account created! Check your email for verification.");
         navigate("/home");
       }
     } catch (error) {
@@ -155,7 +151,7 @@ const CreateAccount = () => {
 
       <div className="p-6 max-w-md mx-auto space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username">Username (minimum 3 characters)</Label>
+          <Label htmlFor="username">Username * (minimum 3 characters)</Label>
           <div className="relative">
             <Input
               id="username"
@@ -181,15 +177,16 @@ const CreateAccount = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email (Optional)</Label>
+          <Label htmlFor="email">Email *</Label>
           <div className="relative">
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email address (optional)"
+              placeholder="Enter your email address"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               className="h-12 pr-12"
+              required
             />
             {formData.email && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -206,7 +203,7 @@ const CreateAccount = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number *</Label>
+          <Label htmlFor="phone">Phone Number (Optional)</Label>
           <div className="flex gap-2">
             <select
               value={formData.countryCode}
@@ -233,19 +230,6 @@ const CreateAccount = () => {
               <option value="+41">🇨🇭 +41</option>
               <option value="+32">🇧🇪 +32</option>
               <option value="+43">🇦🇹 +43</option>
-              <option value="+351">🇵🇹 +351</option>
-              <option value="+30">🇬🇷 +30</option>
-              <option value="+48">🇵🇱 +48</option>
-              <option value="+420">🇨🇿 +420</option>
-              <option value="+36">🇭🇺 +36</option>
-              <option value="+90">🇹🇷 +90</option>
-              <option value="+966">🇸🇦 +966</option>
-              <option value="+971">🇦🇪 +971</option>
-              <option value="+972">🇮🇱 +972</option>
-              <option value="+20">🇪🇬 +20</option>
-              <option value="+27">🇿🇦 +27</option>
-              <option value="+234">🇳🇬 +234</option>
-              <option value="+254">🇰🇪 +254</option>
               <option value="+82">🇰🇷 +82</option>
               <option value="+65">🇸🇬 +65</option>
               <option value="+60">🇲🇾 +60</option>
@@ -256,13 +240,12 @@ const CreateAccount = () => {
               <option value="+880">🇧🇩 +880</option>
               <option value="+92">🇵🇰 +92</option>
               <option value="+64">🇳🇿 +64</option>
-              <option value="+98">🇮🇷 +98</option>
             </select>
             <div className="relative flex-1">
               <Input
                 id="phone"
                 type="tel"
-                placeholder="Enter your phone number"
+                placeholder="Enter your phone number (optional)"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 className="h-12"
@@ -271,47 +254,47 @@ const CreateAccount = () => {
           </div>
         </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  className="h-12 pr-12"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              {formData.password && (
-                <div className="text-xs space-y-1">
-                  {validatePassword(formData.password).errors.map((error, index) => (
-                    <div key={index} className="text-red-500 flex items-center gap-1">
-                      <X className="h-3 w-3" />
-                      {error}
-                    </div>
-                  ))}
-                  {validatePassword(formData.password).isValid && (
-                    <div className="text-green-500 flex items-center gap-1">
-                      <Check className="h-3 w-3" />
-                      Password meets security requirements
-                    </div>
-                  )}
+        <div className="space-y-2">
+          <Label htmlFor="password">Password *</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a strong password"
+              value={formData.password}
+              onChange={(e) => handleInputChange("password", e.target.value)}
+              className="h-12 pr-12"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          {formData.password && (
+            <div className="text-xs space-y-1">
+              {validatePassword(formData.password).errors.map((error, index) => (
+                <div key={index} className="text-red-500 flex items-center gap-1">
+                  <X className="h-3 w-3" />
+                  {error}
+                </div>
+              ))}
+              {validatePassword(formData.password).isValid && (
+                <div className="text-green-500 flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  Password meets security requirements
                 </div>
               )}
             </div>
+          )}
+        </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Label htmlFor="confirmPassword">Confirm Password *</Label>
           <div className="relative">
             <Input
               id="confirmPassword"

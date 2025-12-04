@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { MapPin, Camera, Upload, X, Video, ChevronLeft, Film } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { MapPin, Camera, Upload, X, Video, ChevronLeft, Film, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,9 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useLocation } from "@/hooks/useLocation";
 import { useReelUpload } from "@/hooks/useReelUpload";
+import { useUsdRate } from "@/hooks/useUsdRate";
 import { toast } from "sonner";
-import { sanitizeInput, validateFileUpload } from "@/utils/security";
+import { validateFileUpload } from "@/utils/security";
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const Sell = () => {
   const { categories } = useCategories();
   const { location: userLocation } = useLocation();
   const { uploadReel, uploading: reelUploading } = useReelUpload();
+  const { convertToUsd } = useUsdRate();
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,6 +37,7 @@ const Sell = () => {
     categoryId: "",
     location: userLocation || ""
   });
+  const [keyFeatures, setKeyFeatures] = useState<string[]>(["", "", ""]);
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
   const [reelVideo, setReelVideo] = useState<File | null>(null);
@@ -49,20 +52,40 @@ const Sell = () => {
 
   const conditions = ["New", "Like New", "Good", "Fair"];
 
+  // Calculate USD equivalent
+  const priceInInr = parseFloat(formData.price) || 0;
+  const priceInUsd = priceInInr > 0 ? convertToUsd(priceInInr) : 0;
+
   const handleInputChange = (field: string, value: string) => {
-    // Sanitize input to prevent XSS attacks
-    const sanitizedValue = sanitizeInput(value);
-    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    // Don't sanitize - allow all characters including spaces
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleKeyFeatureChange = (index: number, value: string) => {
+    const updated = [...keyFeatures];
+    updated[index] = value;
+    setKeyFeatures(updated);
+  };
+
+  const addKeyFeature = () => {
+    if (keyFeatures.length < 6) {
+      setKeyFeatures([...keyFeatures, ""]);
+    }
+  };
+
+  const removeKeyFeature = (index: number) => {
+    if (keyFeatures.length > 3) {
+      setKeyFeatures(keyFeatures.filter((_, i) => i !== index));
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     
-    // Validate each file before adding
     const validFiles: File[] = [];
     for (const file of files) {
       const validation = validateFileUpload(file, {
-        maxSize: 5 * 1024 * 1024, // 5MB limit
+        maxSize: 5 * 1024 * 1024,
         allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
         allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
       });
@@ -74,15 +97,14 @@ const Sell = () => {
       }
     }
     
-    setImages(prev => [...prev, ...validFiles].slice(0, 10)); // Max 10 images
+    setImages(prev => [...prev, ...validFiles].slice(0, 10));
   };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate video file
       const validation = validateFileUpload(file, {
-        maxSize: 50 * 1024 * 1024, // 50MB limit for video
+        maxSize: 50 * 1024 * 1024,
         allowedTypes: ['video/mp4', 'video/webm', 'video/ogg'],
         allowedExtensions: ['.mp4', '.webm', '.ogg']
       });
@@ -110,6 +132,13 @@ const Sell = () => {
       return;
     }
 
+    // Validate key features - at least 3 non-empty
+    const validFeatures = keyFeatures.filter(f => f.trim().length > 0);
+    if (validFeatures.length < 3) {
+      toast.error("Please add at least 3 key features");
+      return;
+    }
+
     if (!formData.title || !formData.price || !formData.description || images.length < 3) {
       toast.error("Please fill all required fields and add at least 3 images");
       return;
@@ -117,7 +146,6 @@ const Sell = () => {
 
     setLoading(true);
     try {
-      // Convert File objects to data URLs for storage
       const imageUrls = await Promise.all(
         images.map(async (file) => {
           return new Promise<string>((resolve) => {
@@ -135,7 +163,8 @@ const Sell = () => {
         condition: formData.condition.toLowerCase().replace(' ', '_') as 'new' | 'like_new' | 'good' | 'fair',
         category_id: formData.categoryId || null,
         location: formData.location,
-        images: imageUrls
+        images: imageUrls,
+        key_features: validFeatures
       });
 
       if (error) {
@@ -155,7 +184,7 @@ const Sell = () => {
     const file = event.target.files?.[0];
     if (file) {
       const validation = validateFileUpload(file, {
-        maxSize: 100 * 1024 * 1024, // 100MB limit for reel
+        maxSize: 100 * 1024 * 1024,
         allowedTypes: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'],
         allowedExtensions: ['.mp4', '.webm', '.ogg', '.mov']
       });
@@ -212,256 +241,303 @@ const Sell = () => {
           
           <TabsContent value="product" className="space-y-6">
             {/* Media Upload */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Photos & Video</h2>
-          
-          {/* Image Upload */}
-          <div>
-            <Label>Photos (Required) - {images.length}/10</Label>
-            <div className="grid grid-cols-3 gap-3 mt-2">
-              {images.map((image, index) => (
-                <div key={index} className="relative aspect-square">
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt={`Upload ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
-                    onClick={() => removeImage(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                  {index === 0 && (
-                    <div className="absolute bottom-1 left-1 bg-primary text-white px-2 py-0.5 rounded text-xs">
-                      Cover
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Photos & Video</h2>
+              
+              {/* Image Upload */}
+              <div>
+                <Label>Photos (Required) - {images.length}/10</Label>
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      {index === 0 && (
+                        <div className="absolute bottom-1 left-1 bg-primary text-white px-2 py-0.5 rounded text-xs">
+                          Cover
+                        </div>
+                      )}
                     </div>
+                  ))}
+                  
+                  {images.length < 10 && (
+                    <Card 
+                      className="aspect-square cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <CardContent className="flex flex-col items-center justify-center h-full p-2">
+                        <Camera className="h-6 w-6 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground text-center">Add Photo</span>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+                
+                <p className="text-xs text-muted-foreground mt-2">
+                  Add 3-10 photos. First photo will be the cover image. Swipeable in product view.
+                </p>
+                
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => imageInputRef.current?.click()}
+                    className="flex-1"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Camera
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => imageInputRef.current?.click()}
+                    className="flex-1"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Gallery
+                  </Button>
+                </div>
+              </div>
+
+              {/* Video Upload */}
+              <div>
+                <Label>Video (Optional)</Label>
+                {video ? (
+                  <div className="relative mt-2">
+                    <video
+                      src={URL.createObjectURL(video)}
+                      className="w-full h-32 object-cover rounded-lg"
+                      controls
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                      onClick={removeVideo}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Card 
+                    className="mt-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => videoInputRef.current?.click()}
+                  >
+                    <CardContent className="flex items-center justify-center p-6">
+                      <div className="text-center">
+                        <Video className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Add a video (optional)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Max 30 seconds</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                type="text"
+                placeholder="What are you selling?"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                className="h-12"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe your item in detail..."
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                className="min-h-32 resize-none"
+              />
+              <div className="text-right text-xs text-muted-foreground">
+                {formData.description.length}/500
+              </div>
+            </div>
+
+            {/* Key Features */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Key Features * (3-6 features)</Label>
+                {keyFeatures.length < 6 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={addKeyFeature}
+                    className="text-primary"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                )}
+              </div>
+              {keyFeatures.map((feature, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    placeholder={`Feature ${index + 1}`}
+                    value={feature}
+                    onChange={(e) => handleKeyFeatureChange(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  {keyFeatures.length > 3 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeKeyFeature(index)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
               ))}
+              <p className="text-xs text-muted-foreground">
+                Add key highlights that make your product stand out
+              </p>
+            </div>
+
+            {/* Price and Condition */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (INR) *</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                  <Input
+                    id="price"
+                    type="number"
+                    placeholder="0"
+                    value={formData.price}
+                    onChange={(e) => handleInputChange("price", e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                {priceInInr > 0 && (
+                  <p className="text-xs text-primary font-medium">
+                    ≈ ${priceInUsd.toLocaleString()} USD
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Condition</Label>
+                <div className="flex flex-wrap gap-2">
+                  {conditions.map((condition) => (
+                    <Button
+                      key={condition}
+                      variant={formData.condition === condition ? "reown" : "outline"}
+                      size="sm"
+                      onClick={() => handleInputChange("condition", condition)}
+                      className="text-xs"
+                    >
+                      {condition}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Category & Location */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Category & Location</h2>
               
-              {images.length < 10 && (
-                <Card 
-                  className="aspect-square cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => imageInputRef.current?.click()}
-                >
-                  <CardContent className="flex flex-col items-center justify-center h-full p-2">
-                    <Camera className="h-6 w-6 text-muted-foreground mb-1" />
-                    <span className="text-xs text-muted-foreground text-center">Add Photo</span>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-            
-            <p className="text-xs text-muted-foreground mt-2">
-              Add 3-10 photos. First photo will be the cover image. Swipeable in product view.
-            </p>
-            
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            
-            <div className="flex gap-2 mt-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => imageInputRef.current?.click()}
-                className="flex-1"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Camera
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => imageInputRef.current?.click()}
-                className="flex-1"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Gallery
-              </Button>
-            </div>
-          </div>
-
-          {/* Video Upload */}
-          <div>
-            <Label>Video (Optional)</Label>
-            {video ? (
-              <div className="relative mt-2">
-                <video
-                  src={URL.createObjectURL(video)}
-                  className="w-full h-32 object-cover rounded-lg"
-                  controls
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
-                  onClick={removeVideo}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={formData.categoryId === category.id ? "reown" : "outline"}
+                      size="sm"
+                      onClick={() => handleInputChange("categoryId", category.id)}
+                      className="text-xs"
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <Card 
-                className="mt-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => videoInputRef.current?.click()}
-              >
-                <CardContent className="flex items-center justify-center p-6">
-                  <div className="text-center">
-                    <Video className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Add a video (optional)</p>
-                    <p className="text-xs text-muted-foreground mt-1">Max 30 seconds</p>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      type="text"
+                      placeholder="City, State"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange("location", e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              onChange={handleVideoUpload}
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="space-y-2">
-          <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            type="text"
-            placeholder="What are you selling?"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            className="h-12"
-          />
-        </div>
-
-        {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description *</Label>
-          <Textarea
-            id="description"
-            placeholder="Describe your item in detail..."
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            className="min-h-32 resize-none"
-          />
-          <div className="text-right text-xs text-muted-foreground">
-            {formData.description.length}/500
-          </div>
-        </div>
-
-        {/* Price and Condition */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="price">Price *</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-              <Input
-                id="price"
-                type="text"
-                placeholder="0.00"
-                value={formData.price}
-                onChange={(e) => handleInputChange("price", e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Condition</Label>
-            <div className="flex flex-wrap gap-2">
-              {conditions.map((condition) => (
-                <Button
-                  key={condition}
-                  variant={formData.condition === condition ? "reown" : "outline"}
-                  size="sm"
-                  onClick={() => handleInputChange("condition", condition)}
-                  className="text-xs"
-                >
-                  {condition}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Category & Location */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Category & Location</h2>
-          
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={formData.categoryId === category.id ? "reown" : "outline"}
-                  size="sm"
-                  onClick={() => handleInputChange("categoryId", category.id)}
-                  className="text-xs"
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="location"
-                  type="text"
-                  placeholder="City, State"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={async () => {
-                  if (navigator.geolocation) {
-                    toast.success('Getting your location...');
-                    navigator.geolocation.getCurrentPosition(
-                      async (position) => {
-                        const { latitude, longitude } = position.coords;
-                        // Import reverse geocode function
-                        const { reverseGeocode } = await import('@/utils/locationFormat');
-                        const locationName = await reverseGeocode(latitude, longitude);
-                        setFormData({...formData, location: locationName});
-                        toast.success('Location added successfully!');
-                      },
-                      (error) => {
-                        toast.error('Unable to get location. Please enter manually.');
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      if (navigator.geolocation) {
+                        toast.success('Getting your location...');
+                        navigator.geolocation.getCurrentPosition(
+                          async (position) => {
+                            const { latitude, longitude } = position.coords;
+                            const { reverseGeocode } = await import('@/utils/locationFormat');
+                            const locationName = await reverseGeocode(latitude, longitude);
+                            setFormData({...formData, location: locationName});
+                            toast.success('Location added successfully!');
+                          },
+                          (error) => {
+                            toast.error('Unable to get location. Please enter manually.');
+                          }
+                        );
+                      } else {
+                        toast.error('Geolocation not supported by your browser.');
                       }
-                    );
-                  } else {
-                    toast.error('Geolocation not supported by your browser.');
-                  }
-                }}
-                className="px-3"
-              >
-                📍
-              </Button>
+                    }}
+                    className="px-3"
+                  >
+                    📍
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
             <Button
               variant="reown"
@@ -492,10 +568,10 @@ const Sell = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-1 right-1 h-6 w-6 bg-black/50 text-white hover:bg-black/70"
+                      className="absolute top-2 right-2 h-8 w-8 bg-black/50 text-white hover:bg-black/70"
                       onClick={removeReelVideo}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
@@ -505,9 +581,9 @@ const Sell = () => {
                   >
                     <CardContent className="flex items-center justify-center p-12">
                       <div className="text-center">
-                        <Film className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-lg text-muted-foreground mb-2">Upload your reel video</p>
-                        <p className="text-sm text-muted-foreground">Tap to select video from your device</p>
+                        <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm font-medium">Upload your reel video</p>
+                        <p className="text-xs text-muted-foreground mt-1">MP4, MOV up to 100MB</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -524,25 +600,25 @@ const Sell = () => {
 
               {/* Reel Title */}
               <div className="space-y-2">
-                <Label htmlFor="reelTitle">Reel Title *</Label>
+                <Label htmlFor="reelTitle">Title *</Label>
                 <Input
                   id="reelTitle"
                   type="text"
                   placeholder="Give your reel a catchy title"
                   value={reelData.title}
-                  onChange={(e) => setReelData(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => setReelData({...reelData, title: e.target.value})}
                   className="h-12"
                 />
               </div>
 
               {/* Reel Description */}
               <div className="space-y-2">
-                <Label htmlFor="reelDescription">Description</Label>
+                <Label htmlFor="reelDescription">Description (Optional)</Label>
                 <Textarea
                   id="reelDescription"
-                  placeholder="Describe your reel..."
+                  placeholder="Add a description for your reel..."
                   value={reelData.description}
-                  onChange={(e) => setReelData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) => setReelData({...reelData, description: e.target.value})}
                   className="min-h-24 resize-none"
                 />
               </div>
@@ -553,10 +629,14 @@ const Sell = () => {
                 <Input
                   id="buyLink"
                   type="url"
-                  placeholder="https://your-product-link.com"
+                  placeholder="https://example.com/product"
                   value={reelData.buyLink}
-                  onChange={(e) => setReelData(prev => ({ ...prev, buyLink: e.target.value }))}
+                  onChange={(e) => setReelData({...reelData, buyLink: e.target.value})}
+                  className="h-12"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Add a link where viewers can buy the product shown in your reel
+                </p>
               </div>
 
               <Button
@@ -566,7 +646,7 @@ const Sell = () => {
                 onClick={handleReelUpload}
                 disabled={reelUploading || !reelVideo || !reelData.title}
               >
-                {reelUploading ? "Uploading Reel..." : "Upload Reel"}
+                {reelUploading ? "Uploading..." : "Upload Reel"}
               </Button>
             </div>
           </TabsContent>
