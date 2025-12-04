@@ -1,1 +1,10 @@
 project_id = "oanopiyrpofiwfusvthq"
+
+[functions.send-verification-code]
+verify_jwt = false
+
+[functions.send-custom-otp]
+verify_jwt = false
+
+[functions.get-usd-rate]
+verify_jwt = false

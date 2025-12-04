@@ -41,11 +41,10 @@ export const sanitizeHtml = (input: string): string => {
     .replace(/\//g, '&#x2F;');
 };
 
-// Input sanitization for text fields
+// Input sanitization for text fields - preserves spaces
 export const sanitizeInput = (input: string): string => {
   return input
-    .trim()
-    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/[<>]/g, '') // Remove potential HTML tags only
     .slice(0, 1000); // Limit length to prevent DoS
 };
 
