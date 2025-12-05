@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus, Eye, Check } from "lucide-react";
+import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus, Eye, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,23 +29,76 @@ const ProductDetail = () => {
   const { convertToUsd } = useUsdRate();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const loadProduct = useCallback(async () => {
+    if (!id) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(false);
+      const productData = await fetchProductById(id);
+      if (productData) {
+        setProduct(productData);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error('Error loading product:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, fetchProductById]);
 
   useEffect(() => {
-    const loadProduct = async () => {
-      if (id) {
-        const productData = await fetchProductById(id);
-        setProduct(productData);
-      }
-      setLoading(false);
-    };
     loadProduct();
-  }, [id, fetchProductById]);
+  }, [loadProduct]);
 
   const isProductLiked = product ? isFavorite(product.id) : false;
   const randomViews = product ? generateRandomViews(product.id) : 0;
   const randomLikes = product ? generateRandomLikes(product.id) : 0;
+  const images = product?.images || [];
+  const minSwipeDistance = 50;
+
+  const nextImage = () => {
+    if (images.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (images.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) nextImage();
+    if (isRightSwipe) prevImage();
+  };
 
   const handleToggleFavorite = async () => {
     if (!product) return;
@@ -72,13 +125,7 @@ const ProductDetail = () => {
     
     try {
       await addToCart(product.id, 1);
-      toast.success('✓ Item added to your cart!', {
-        description: 'Go to cart to complete your purchase',
-        action: {
-          label: 'View Cart',
-          onClick: () => navigate('/cart')
-        }
-      });
+      toast.success('Item added to cart!');
     } catch (error) {
       toast.error('Failed to add to cart');
     }
@@ -89,18 +136,18 @@ const ProductDetail = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading product...</p>
+          <p className="mt-2 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center p-4">
           <h2 className="text-xl font-semibold mb-2">Product not found</h2>
-          <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">This product may have been removed or doesn't exist.</p>
           <Button onClick={() => navigate('/home')}>Go Home</Button>
         </div>
       </div>
@@ -170,7 +217,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Simple Header */}
+      {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b px-4 py-3 flex items-center justify-between">
         <button 
           onClick={() => navigate(-1)}
@@ -190,23 +237,53 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Main Content - 2 Column Layout on Desktop */}
+      {/* Main Content - 2 Column Layout */}
       <div className="max-w-7xl mx-auto lg:grid lg:grid-cols-2 lg:gap-8 lg:p-8">
         {/* Left Column - Images */}
         <div className="lg:sticky lg:top-24 lg:self-start">
-          {/* Main Image */}
-          <div className="border rounded-xl overflow-hidden bg-muted/10 aspect-square">
+          {/* Main Image with Navigation */}
+          <div 
+            className="relative border rounded-xl overflow-hidden bg-muted/10 aspect-square"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             <img
-              src={product.images?.[currentImageIndex] || '/placeholder.svg'}
+              src={images[currentImageIndex] || '/placeholder.svg'}
               alt={product.title}
               className="w-full h-full object-contain"
             />
+            
+            {/* Desktop Navigation Arrows */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background rounded-full p-2 shadow-lg transition-all opacity-0 lg:opacity-100 hover:scale-110"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background rounded-full p-2 shadow-lg transition-all opacity-0 lg:opacity-100 hover:scale-110"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+            
+            {/* Image Counter */}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-background/80 px-3 py-1 rounded-full text-xs font-medium">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+            )}
           </div>
           
           {/* Thumbnails */}
-          {product.images && product.images.length > 1 && (
+          {images.length > 1 && (
             <div className="flex gap-2 p-4 overflow-x-auto">
-              {product.images.map((image: string, index: number) => (
+              {images.map((image: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
@@ -250,9 +327,11 @@ const ProductDetail = () => {
           </div>
 
           {/* Description */}
-          <p className="text-muted-foreground text-base leading-relaxed">
-            {product.description}
-          </p>
+          {product.description && (
+            <p className="text-muted-foreground text-base leading-relaxed">
+              {product.description}
+            </p>
+          )}
 
           {/* Key Features Card */}
           {keyFeatures.length > 0 && (
@@ -271,16 +350,19 @@ const ProductDetail = () => {
             </Card>
           )}
 
-          {/* Stats */}
-          <div className="flex items-center gap-6 py-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Eye className="h-4 w-4" />
-              <span className="text-sm">{formatNumber(randomViews)} views</span>
+          {/* Stats & Stock */}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">{formatNumber(randomViews)} views</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Heart className="h-4 w-4" />
+                <span className="text-sm">{formatNumber(randomLikes)} likes</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Heart className="h-4 w-4" />
-              <span className="text-sm">{formatNumber(randomLikes)} likes</span>
-            </div>
+            <span className="text-sm text-muted-foreground">1 in stock</span>
           </div>
 
           {/* Product Details Card */}

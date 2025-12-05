@@ -1,4 +1,4 @@
-import { ArrowLeft, Send, Image as ImageIcon, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Video, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,7 @@ interface Message {
   sender_id: string;
   receiver_id: string;
   content: string | null;
-  message_type: 'text' | 'image' | 'product';
+  message_type: 'text' | 'image' | 'video' | 'product';
   image_url: string | null;
   read_at: string | null;
   created_at: string;
@@ -228,7 +228,7 @@ const Chat = () => {
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -263,11 +263,12 @@ const Chat = () => {
     
     try {
       let messageContent = messageText;
-      let messageType: 'text' | 'image' = 'text';
+      let messageType: 'text' | 'image' | 'video' = 'text';
       
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+        const isVideo = imageFile.type.startsWith('video/');
         
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -282,7 +283,7 @@ const Chat = () => {
           .getPublicUrl(filePath);
         
         messageContent = publicUrl;
-        messageType = 'image';
+        messageType = isVideo ? 'video' : 'image';
       }
 
       const { data: newMessage, error } = await supabase
@@ -426,6 +427,12 @@ const Chat = () => {
                     alt="Shared image" 
                     className="rounded-lg max-w-full h-auto max-h-64"
                   />
+                ) : msg.message_type === 'video' ? (
+                  <video 
+                    src={msg.content || ''} 
+                    controls
+                    className="rounded-lg max-w-full h-auto max-h-64"
+                  />
                 ) : (
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 )}
@@ -477,7 +484,7 @@ const Chat = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             className="hidden"
             onChange={handleImageSelect}
           />

@@ -17,6 +17,7 @@ import { useFollows } from "@/hooks/useFollows";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
+import { getRandomAvatarEmoji } from "@/utils/randomStats";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -209,6 +210,9 @@ const Profile = () => {
       case 'My Orders':
         navigate('/my-orders');
         break;
+      case 'Buy Orders':
+        navigate('/buy-orders');
+        break;
     }
   };
 
@@ -237,6 +241,7 @@ const Profile = () => {
 
   const accountOptions = [
     { label: "My Listings", icon: Package, count: null },
+    { label: "Buy Orders", icon: ClipboardList, count: null },
     { label: "My Orders", icon: ClipboardList, count: null },
     { label: "Cart", icon: ShoppingCart, count: getCartItemCount() },
     { label: "Favorites", icon: Heart, count: null },
@@ -260,11 +265,7 @@ const Profile = () => {
               {profile?.avatar_url ? 
                 ((profile?.display_name && profile.display_name.slice(0, 2)) || 
                  (profile?.username && profile.username.slice(0, 2)) || 'U') : 
-                (() => {
-                  const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
-                  const index = profile?.username ? profile.username.length % emojis.length : 0;
-                  return emojis[index];
-                })()
+                getRandomAvatarEmoji(profile?.username || 'user')
               }
             </AvatarFallback>
           </Avatar>

@@ -32,6 +32,7 @@ import CategoryProducts from "./pages/CategoryProducts";
 import AdminReels from "./pages/AdminReels";
 import AdminOrders from "./pages/AdminOrders";
 import UserOrders from "./pages/UserOrders";
+import BuyOrders from "./pages/BuyOrders";
 import NotFound from "./pages/NotFound";
 import Saved from "./pages/Saved";
 import Cart from "./pages/Cart";
@@ -89,7 +90,7 @@ const AppContent = () => {
         <Route path="/admin/reels" element={user ? <AdminReels /> : <Navigate to="/auth" />} />
         <Route path="/admin/orders" element={user ? <AdminOrders /> : <Navigate to="/auth" />} />
         <Route path="/my-orders" element={user ? <UserOrders /> : <Navigate to="/auth" />} />
-        <Route path="/cart" element={user ? <Cart /> : <Navigate to="/auth" />} />
+        <Route path="/buy-orders" element={user ? <BuyOrders /> : <Navigate to="/auth" />} />
         <Route path="/checkout" element={user ? <Checkout /> : <Navigate to="/auth" />} />
         <Route path="/share" element={user ? <ShareSheet /> : <Navigate to="/auth" />} />
         
