@@ -14,6 +14,7 @@ export interface Product {
   brand: string | null;
   location: string | null;
   images: string[];
+  key_features: string[] | null;
   status: 'active' | 'sold' | 'draft' | 'hidden';
   views: number;
   likes: number;
@@ -117,6 +118,7 @@ export function useProducts() {
     brand?: string;
     location?: string;
     images?: string[];
+    key_features?: string[];
   }) => {
     if (!user) return { error: new Error('User not authenticated') };
 

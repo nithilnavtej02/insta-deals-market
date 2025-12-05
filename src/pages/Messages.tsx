@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { UserPresence } from "@/components/UserPresence";
+import { getRandomAvatarEmoji } from "@/utils/randomStats";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -59,12 +59,17 @@ const Messages = () => {
                 </div>
 
                 {/* Avatar */}
-                 <UserPresence userId={conversation.profiles?.user_id}>
+                <UserPresence userId={conversation.profiles?.user_id}>
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={conversation.profiles?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.profiles?.username}`} />
-                    <AvatarFallback>{conversation.profiles?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarImage src={conversation.profiles?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {conversation.profiles?.avatar_url ? 
+                        conversation.profiles?.username?.slice(0, 2).toUpperCase() : 
+                        getRandomAvatarEmoji(conversation.profiles?.username || 'user')
+                      }
+                    </AvatarFallback>
                   </Avatar>
-                 </UserPresence>
+                </UserPresence>
 
                {/* Content */}
                <div className="flex-1 min-w-0">

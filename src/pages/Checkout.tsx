@@ -111,7 +111,7 @@ const Checkout = () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, username')
         .eq('user_id', user.id)
         .single();
 
@@ -159,28 +159,12 @@ const Checkout = () => {
 
         // Create notification for seller
         if (order && item.seller_id) {
-          const orderDetailsText = `
-New order received!
-Product: ${item.title}
-Quantity: ${item.quantity}
-Amount: $${item.price * item.quantity}
-
-Shipping Details:
-${formData.firstName} ${formData.lastName}
-${formData.address}
-${formData.city}, ${formData.postalCode}${formData.state ? `, ${formData.state}` : ''}
-Mobile: ${formData.mobile}
-${formData.email ? `Email: ${formData.email}` : ''}
-
-Payment: ${paymentMethod === 'upi' ? `UPI (UTR: ${formData.utrNumber})` : 'Cash on Delivery'}
-          `.trim();
-
           await supabase.from('notifications').insert({
             user_id: item.seller_id,
             type: 'new_order',
-            title: 'New Order Received!',
-            content: orderDetailsText,
-            action_url: '/my-listings'
+            title: `@${profile.username || 'Buyer'} wants to buy this product`,
+            content: `Order for ${item.title} - ₹${(item.price * item.quantity).toLocaleString()}`,
+            action_url: '/buy-orders'
           });
         }
       }
