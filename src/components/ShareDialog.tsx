@@ -1,8 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Copy, Facebook, MessageCircle, Send, Twitter, Instagram, Share } from "lucide-react";
-import { FaTiktok, FaThreads } from "react-icons/fa6";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 
 interface ShareDialogProps {
@@ -14,115 +13,127 @@ interface ShareDialogProps {
 }
 
 const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, title, url, text }) => {
-  const appName = "ReOWN Marketplace";
+  const appName = "ReOWN";
   const shareText = `Check out "${title}" on ${appName}! 🛍️\n\n${text || `Amazing product at great price`}\n\n`;
-  
+
   const shareOptions = [
-    {
-      name: "WhatsApp",
-      icon: MessageCircle,
-      color: "bg-[#25D366]",
-      onClick: () => {
+    { 
+      name: "WhatsApp", 
+      icon: "💬", 
+      color: "bg-green-500", 
+      action: () => {
         window.open(`https://wa.me/?text=${encodeURIComponent(shareText + url)}`, '_blank');
       }
     },
-    {
-      name: "Facebook",
-      icon: Facebook,
-      color: "bg-[#1877F2]",
-      onClick: () => {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareText)}`, '_blank');
-      }
-    },
-    {
-      name: "Twitter",
-      icon: Twitter,
-      color: "bg-[#1DA1F2]",
-      onClick: () => {
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`, '_blank');
-      }
-    },
-    {
-      name: "Instagram",
-      icon: Instagram,
-      color: "bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737]",
-      onClick: () => {
+    { 
+      name: "Instagram", 
+      icon: "📷", 
+      color: "bg-gradient-to-r from-purple-500 to-pink-500", 
+      action: () => {
         navigator.clipboard.writeText(shareText + url);
         toast.success("Link copied! Share it on Instagram");
       }
     },
-    {
-      name: "TikTok",
-      icon: FaTiktok,
-      color: "bg-black",
-      onClick: () => {
+    { 
+      name: "TikTok", 
+      icon: "🎵", 
+      color: "bg-black", 
+      action: () => {
         navigator.clipboard.writeText(shareText + url);
         toast.success("Link copied! Share it on TikTok");
       }
     },
-    {
-      name: "Threads",
-      icon: FaThreads,
-      color: "bg-black",
-      onClick: () => {
-        navigator.clipboard.writeText(shareText + url);
-        toast.success("Link copied! Share it on Threads");
+    { 
+      name: "X (Twitter)", 
+      icon: "🐦", 
+      color: "bg-black", 
+      action: () => {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`, '_blank');
       }
     },
-    {
-      name: "Telegram",
-      icon: Send,
-      color: "bg-[#0088CC]",
-      onClick: () => {
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, '_blank');
+    { 
+      name: "LinkedIn", 
+      icon: "💼", 
+      color: "bg-blue-600", 
+      action: () => {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
       }
     },
-    {
-      name: "Copy Link",
-      icon: Copy,
-      color: "bg-gray-600",
-      onClick: () => {
+    { 
+      name: "Snapchat", 
+      icon: "👻", 
+      color: "bg-yellow-400", 
+      action: () => {
+        window.open(`https://www.snapchat.com/share?url=${encodeURIComponent(url)}`, '_blank');
+      }
+    },
+    { 
+      name: "Facebook", 
+      icon: "👥", 
+      color: "bg-blue-500", 
+      action: () => {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareText)}`, '_blank');
+      }
+    },
+    { 
+      name: "Copy Link", 
+      icon: "🔗", 
+      color: "bg-gray-500", 
+      action: () => {
         navigator.clipboard.writeText(url);
         toast.success("Link copied to clipboard!");
         onClose();
       }
-    }
+    },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share className="h-5 w-5" />
-            Share on
-          </DialogTitle>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <DialogHeader className="p-4 border-b border-border">
+          <DialogTitle className="text-lg font-semibold">Share to</DialogTitle>
         </DialogHeader>
         
-        {/* Share Message */}
-        <div className="mt-2 p-4 bg-muted/50 rounded-lg">
-          <p className="text-sm font-medium mb-2">{appName}</p>
-          <p className="text-xs text-muted-foreground whitespace-pre-line">{shareText}</p>
-          <p className="text-xs text-primary mt-2 truncate">{url}</p>
+        {/* Share Options */}
+        <div className="p-4">
+          <div className="grid grid-cols-4 gap-4">
+            {shareOptions.map((option) => (
+              <button
+                key={option.name}
+                onClick={option.action}
+                className="flex flex-col items-center gap-2 p-3 hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <div className={`w-12 h-12 rounded-full ${option.color} flex items-center justify-center text-white text-xl`}>
+                  {option.icon}
+                </div>
+                <span className="text-xs font-medium text-center text-foreground">{option.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Share Options as Circles */}
-        <div className="grid grid-cols-4 gap-6 mt-6">
-          {shareOptions.map((option) => {
-            const Icon = option.icon;
-            return (
-              <div
-                key={option.name}
-                className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={option.onClick}
-              >
-                <div className={`w-16 h-16 rounded-full ${option.color} flex items-center justify-center text-white shadow-lg hover:scale-105 transition-transform`}>
-                  <Icon className="h-7 w-7" />
-                </div>
-                <span className="text-xs text-center text-muted-foreground font-medium">{option.name}</span>
-              </div>
-            );
-          })}
+        {/* Additional Actions */}
+        <div className="border-t border-border p-4 space-y-3">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start"
+            onClick={() => {
+              toast.info("Report feature coming soon");
+              onClose();
+            }}
+          >
+            Report this content
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start"
+            onClick={() => {
+              toast.info("Not interested feature coming soon");
+              onClose();
+            }}
+          >
+            Not interested
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
