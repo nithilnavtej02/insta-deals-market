@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart, Share2, MessageCircle, MapPin, Shield, UserPlus, UserMinus, Eye, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,33 +35,46 @@ const ProductDetail = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const loadProduct = useCallback(async () => {
-    if (!id) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(false);
-      const productData = await fetchProductById(id);
-      if (productData) {
-        setProduct(productData);
-      } else {
-        setError(true);
-      }
-    } catch (err) {
-      console.error('Error loading product:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, fetchProductById]);
-
   useEffect(() => {
+    let cancelled = false;
+    
+    const loadProduct = async () => {
+      if (!id) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        setError(false);
+        const productData = await fetchProductById(id);
+        
+        if (cancelled) return;
+        
+        if (productData) {
+          setProduct(productData);
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error loading product:', err);
+          setError(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    
     loadProduct();
-  }, [loadProduct]);
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const isProductLiked = product ? isFavorite(product.id) : false;
   const randomViews = product ? generateRandomViews(product.id) : 0;
