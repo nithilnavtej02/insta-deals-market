@@ -1,9 +1,13 @@
 project_id = "oanopiyrpofiwfusvthq"
 
-[functions.send-verification-code]
-verify_jwt = false
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
-[functions.send-custom-otp]
+[functions.send-verification-code]
 verify_jwt = false
 
 [functions.get-usd-rate]

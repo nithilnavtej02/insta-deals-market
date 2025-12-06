@@ -52,22 +52,24 @@ export function useProducts() {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          *,
+          id,
+          title,
+          price,
+          images,
+          location,
+          created_at,
+          seller_id,
+          category_id,
           profiles:seller_id (
-            username,
-            display_name,
-            avatar_url,
-            location,
-            verified
+            username
           ),
           categories:category_id (
-            name,
-            icon,
-            color
+            name
           )
         `)
         .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (error) throw error;
       setProducts((data as unknown) as Product[] || []);
@@ -79,26 +81,37 @@ export function useProducts() {
   };
 
   const fetchProductById = async (id: string): Promise<Product | null> => {
+    if (!id) return null;
+    
     try {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          *,
+          id,
+          title,
+          description,
+          price,
+          original_price,
+          images,
+          key_features,
+          location,
+          condition,
+          brand,
+          created_at,
+          seller_id,
+          category_id,
           profiles:seller_id (
             username,
             display_name,
             avatar_url,
-            location,
             verified
           ),
           categories:category_id (
-            name,
-            icon,
-            color
+            name
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return (data as unknown) as Product;
