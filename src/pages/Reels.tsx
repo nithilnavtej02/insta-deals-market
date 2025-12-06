@@ -287,7 +287,7 @@ const Reels = () => {
       {/* Share Sheet */}
       {shareSheet.isOpen && shareSheet.reel && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[70vh] overflow-y-auto">
+          <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[85vh] overflow-y-auto animate-slide-up">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-foreground">Share to</h2>
               <Button variant="ghost" size="icon" onClick={() => setShareSheet({isOpen: false, reel: null})}>
@@ -298,16 +298,18 @@ const Reels = () => {
               <div className="grid grid-cols-4 gap-4">
                 {[
                   { name: "WhatsApp", icon: "💬", color: "bg-green-500", action: () => {
-                    window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
+                    window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
                   }},
                   { name: "Instagram", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500", action: () => {
-                    window.open(`https://www.instagram.com/?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                    navigator.clipboard.writeText(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`);
+                    toast.success("Link copied! Share it on Instagram");
                   }},
                   { name: "TikTok", icon: "🎵", color: "bg-black", action: () => {
-                    window.open(`https://www.tiktok.com/share?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                    navigator.clipboard.writeText(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`);
+                    toast.success("Link copied! Share it on TikTok");
                   }},
                   { name: "X (Twitter)", icon: "🐦", color: "bg-black", action: () => {
-                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title}`)}`, '_blank');
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this reel on ReOWN: ${shareSheet.reel.title}`)}&url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
                   }},
                   { name: "LinkedIn", icon: "💼", color: "bg-blue-600", action: () => {
                     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
@@ -320,7 +322,7 @@ const Reels = () => {
                   }},
                   { name: "Copy Link", icon: "🔗", color: "bg-gray-500", action: () => {
                     navigator.clipboard.writeText(`${window.location.origin}/reels?id=${shareSheet.reel.id}`);
-                    alert("Link copied to clipboard!");
+                    toast.success("Link copied to clipboard!");
                   }},
                 ].map((option) => (
                   <button
@@ -335,6 +337,29 @@ const Reels = () => {
                   </button>
                 ))}
               </div>
+            </div>
+            {/* Additional Actions */}
+            <div className="border-t border-border p-4 space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => {
+                  toast.info("Report feature coming soon");
+                  setShareSheet({isOpen: false, reel: null});
+                }}
+              >
+                Report this content
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => {
+                  toast.info("Not interested feature coming soon");
+                  setShareSheet({isOpen: false, reel: null});
+                }}
+              >
+                Not interested
+              </Button>
             </div>
           </div>
         </div>
