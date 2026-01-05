@@ -6,33 +6,48 @@ import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!identifier || !password) {
       toast.error("Please fill in all fields");
-      return;
-    }
-
-    if (!email.includes("@")) {
-      toast.error("Please sign in using your email address");
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await signIn(email, password);
+      let emailToUse = identifier;
+
+      // Check if input is NOT an email (no @ symbol) - treat as username
+      if (!identifier.includes("@")) {
+        // Look up email by username
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', identifier.toLowerCase().trim())
+          .single();
+
+        if (profileError || !profileData?.email) {
+          toast.error("Username not found");
+          setLoading(false);
+          return;
+        }
+        emailToUse = profileData.email;
+      }
+
+      const { data, error } = await signIn(emailToUse, password);
 
       if (error) {
         if (error.message.includes('Invalid login')) {
-          toast.error("Invalid email or password");
+          toast.error("Invalid credentials");
         } else {
           toast.error(error.message);
         }
@@ -65,13 +80,13 @@ const Auth = () => {
 
       <div className="p-6 max-w-md mx-auto space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="identifier">Email or Username</Label>
           <Input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="identifier"
+            type="text"
+            placeholder="Enter your email or username"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className="h-12"
           />
         </div>
