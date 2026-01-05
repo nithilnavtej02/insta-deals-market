@@ -15,6 +15,15 @@ const CreateAccount = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<'form' | 'otp'>('form');
+  const [otp, setOtp] = useState("");
+  const [pendingData, setPendingData] = useState<{
+    email: string;
+    username: string;
+    password: string;
+    phone: string | null;
+  } | null>(null);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -90,13 +99,26 @@ const CreateAccount = () => {
     }
   };
 
-  const handleCreateAccount = async () => {
+  // Generate 6-digit OTP
+  const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  // Hash function for OTP storage (simple hash for demo)
+  const hashCode = async (str: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const handleSendOTP = async () => {
     if (!formData.username || !formData.email || !formData.password) {
-      toast.error("Please fill in all required fields (username, email, password)");
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error("Please enter a valid email address");
@@ -121,11 +143,105 @@ const CreateAccount = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await signUp(formData.email, formData.password, {
-        username: formData.username,
+      const code = generateOTP();
+      const emailHash = await hashCode(formData.email.toLowerCase());
+      const codeHash = await hashCode(code);
+
+      // Store hashed OTP in database
+      const { error: otpError } = await supabase
+        .from('signup_email_otps')
+        .insert({
+          email_hash: emailHash,
+          code_hash: codeHash,
+          purpose: 'signup',
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+        });
+
+      if (otpError) throw otpError;
+
+      // Send OTP via edge function
+      const { error: sendError } = await supabase.functions.invoke('send-verification-code', {
+        body: {
+          email: formData.email,
+          username: formData.username,
+          code: code,
+        },
+      });
+
+      if (sendError) throw sendError;
+
+      // Store pending data for after verification
+      setPendingData({
         email: formData.email,
+        username: formData.username,
+        password: formData.password,
         phone: formData.phone ? formData.countryCode + formData.phone : null,
-        mobile_number: formData.phone ? formData.countryCode + formData.phone : null
+      });
+
+      setStep('otp');
+      toast.success("Verification code sent to your email!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send verification code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter the 6-digit code");
+      return;
+    }
+
+    if (!pendingData) {
+      toast.error("Session expired. Please try again.");
+      setStep('form');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const emailHash = await hashCode(pendingData.email.toLowerCase());
+      const codeHash = await hashCode(otp);
+
+      // Verify OTP from database
+      const { data: otpRecord, error: fetchError } = await supabase
+        .from('signup_email_otps')
+        .select('*')
+        .eq('email_hash', emailHash)
+        .eq('code_hash', codeHash)
+        .eq('purpose', 'signup')
+        .is('consumed_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (!otpRecord) {
+        toast.error("Invalid or expired code. Please try again.");
+        return;
+      }
+
+      // Check attempts
+      if (otpRecord.attempts >= 5) {
+        toast.error("Too many attempts. Please request a new code.");
+        return;
+      }
+
+      // Mark OTP as consumed
+      await supabase
+        .from('signup_email_otps')
+        .update({ consumed_at: new Date().toISOString() })
+        .eq('id', otpRecord.id);
+
+      // Now create the account
+      const { data, error } = await signUp(pendingData.email, pendingData.password, {
+        username: pendingData.username,
+        email: pendingData.email,
+        phone: pendingData.phone,
+        mobile_number: pendingData.phone,
       });
 
       if (error) {
@@ -134,16 +250,116 @@ const CreateAccount = () => {
         } else {
           toast.error(error.message);
         }
-      } else {
-        toast.success("Account created! Check your email for verification.");
-        navigate("/home");
+        return;
       }
-    } catch (error) {
-      toast.error("An error occurred during sign up");
+
+      toast.success("Account created successfully!");
+      navigate("/home");
+    } catch (error: any) {
+      toast.error(error.message || "Verification failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResendOTP = async () => {
+    if (!pendingData) return;
+
+    setLoading(true);
+    try {
+      const code = generateOTP();
+      const emailHash = await hashCode(pendingData.email.toLowerCase());
+      const codeHash = await hashCode(code);
+
+      await supabase
+        .from('signup_email_otps')
+        .insert({
+          email_hash: emailHash,
+          code_hash: codeHash,
+          purpose: 'signup',
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        });
+
+      await supabase.functions.invoke('send-verification-code', {
+        body: {
+          email: pendingData.email,
+          username: pendingData.username,
+          code: code,
+        },
+      });
+
+      toast.success("New code sent!");
+    } catch {
+      toast.error("Failed to resend code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === 'otp') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center p-4 border-b">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setStep('form')}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-xl font-semibold ml-4">Verify Email</h1>
+        </div>
+
+        <div className="p-6 max-w-md mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-2xl">📧</span>
+            </div>
+            <h2 className="text-xl font-semibold">Check your email</h2>
+            <p className="text-muted-foreground">
+              We've sent a 6-digit code to <span className="font-medium text-foreground">{pendingData?.email}</span>
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="otp">Verification Code</Label>
+            <Input
+              id="otp"
+              type="text"
+              placeholder="Enter 6-digit code"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="h-14 text-center text-2xl tracking-[0.5em] font-mono"
+              maxLength={6}
+            />
+          </div>
+
+          <Button
+            variant="reown"
+            size="lg"
+            className="w-full"
+            onClick={handleVerifyOTP}
+            disabled={loading || otp.length !== 6}
+          >
+            {loading ? "Verifying..." : "Verify & Create Account"}
+          </Button>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              Didn't receive the code?
+            </p>
+            <Button
+              variant="link"
+              onClick={handleResendOTP}
+              disabled={loading}
+            >
+              Resend Code
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,10 +545,10 @@ const CreateAccount = () => {
           variant="reown"
           size="lg"
           className="w-full"
-          onClick={handleCreateAccount}
+          onClick={handleSendOTP}
           disabled={loading}
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading ? "Sending Code..." : "Continue"}
         </Button>
 
         <div className="text-center">
