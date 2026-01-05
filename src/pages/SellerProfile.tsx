@@ -55,32 +55,45 @@ const SellerProfile = () => {
 
   const fetchSellerData = async () => {
     try {
-      // Fetch seller profile by user_id
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', username)
-        .single();
+      if (!username) return;
 
-      if (profileError || !profileData) {
+      // Resolve profile id from @username without exposing private profile fields
+      const { data: sellerProfileId, error: idError } = await supabase.rpc(
+        'get_profile_id_by_username',
+        { uname: username }
+      );
+
+      if (idError || !sellerProfileId) {
         toast.error("Seller not found");
         navigate('/');
         return;
       }
 
-      setSeller(profileData);
+      // Fetch safe public profile fields via RPC
+      const { data: sellerRows, error: sellerError } = await supabase.rpc(
+        'get_public_profile_by_profile_id',
+        { profile_uuid: sellerProfileId }
+      );
+
+      const sellerData = sellerRows?.[0] || null;
+      if (sellerError || !sellerData) {
+        toast.error("Seller not found");
+        navigate('/');
+        return;
+      }
+
+      setSeller(sellerData as unknown as SellerData);
 
       // Fetch seller's products
       const { data: productsData } = await supabase
         .from('products')
         .select('*')
-        .eq('seller_id', profileData.id)
+        .eq('seller_id', sellerProfileId)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       setProducts(productsData || []);
-    } catch (error) {
-      console.error('Error fetching seller data:', error);
+    } catch {
       toast.error("Failed to load seller profile");
     } finally {
       setLoading(false);

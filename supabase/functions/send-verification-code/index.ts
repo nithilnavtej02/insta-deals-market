@@ -25,9 +25,8 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     
     if (!RESEND_API_KEY) {
-      console.log('Email would be sent to:', email, 'with code:', code);
       return new Response(
-        JSON.stringify({ success: true, message: 'Development mode - RESEND_API_KEY not set' }),
+        JSON.stringify({ success: true, message: 'RESEND_API_KEY not set' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -149,14 +148,12 @@ serve(async (req) => {
       html: emailHtml,
     });
 
-    console.log('Email sent successfully to:', email);
-
     return new Response(
       JSON.stringify({ success: true, data: emailResponse }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('Error sending verification email:', error);
+    console.error('Error sending verification email');
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

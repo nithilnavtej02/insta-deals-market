@@ -774,6 +774,39 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_email_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email_hash: string
+          expires_at: string
+          id: string
+          purpose: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email_hash: string
+          expires_at: string
+          id?: string
+          purpose?: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email_hash?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+        }
+        Relationships: []
+      }
       typing_indicators: {
         Row: {
           conversation_id: string
@@ -897,6 +930,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_email_available: { Args: { email_input: string }; Returns: boolean }
+      is_username_available: { Args: { uname: string }; Returns: boolean }
       notify_reel_admin: {
         Args: {
           interaction_type: string
