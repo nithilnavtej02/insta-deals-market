@@ -12,63 +12,45 @@ const Auth = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [isOtpStep, setIsOtpStep] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!isOtpStep) {
-      if (!email || !password) {
-        toast.error("Please fill in all fields");
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    // Require email since profiles are no longer publicly readable (security)
+    if (!email.includes("@")) {
+      toast.error("Please sign in using your email address");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await signIn(email, password);
+
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          toast.error("Email verification is enabled in Supabase. Disable 'Confirm email' to use custom OTP-only signup.");
+        } else if (error.message.includes('Invalid login')) {
+          toast.error("Invalid credentials");
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
 
-      setLoading(true);
-      try {
-        // Check if input is username, phone, or email
-        let loginEmail = email;
-        
-        // If not an email format, lookup by username only
-        if (!email.includes('@')) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('username', email)
-            .single();
-
-          if (profileError || !profile?.email) {
-            toast.error("Account not found");
-            setLoading(false);
-            return;
-          }
-          
-          loginEmail = profile.email;
-        }
-
-        const { data, error } = await signIn(loginEmail, password);
-        
-        if (error) {
-          if (error.message.includes('Email not confirmed')) {
-            setIsOtpStep(true);
-            toast.info("Please check your email for confirmation");
-          } else if (error.message.includes('Invalid login')) {
-            toast.error("Invalid credentials");
-          } else {
-            toast.error(error.message);
-          }
-        } else if (data.user) {
-          toast.success("Successfully signed in!");
-          navigate("/home");
-        }
-      } catch (error) {
-        toast.error("An error occurred during sign in");
-      } finally {
-        setLoading(false);
+      if (data.user) {
+        toast.success("Successfully signed in!");
+        navigate("/home");
       }
-    } else {
-      toast.info("Please check your email and click the confirmation link");
+    } catch {
+      toast.error("An error occurred during sign in");
+    } finally {
+      setLoading(false);
     }
   };
 

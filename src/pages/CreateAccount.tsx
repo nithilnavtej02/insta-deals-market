@@ -60,23 +60,32 @@ const CreateAccount = () => {
     if (!value) return;
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq(field, value)
-        .limit(1);
+      if (field === 'username') {
+        const { data, error } = await supabase.rpc('is_username_available', {
+          uname: value,
+        });
+        if (error) throw error;
 
+        setValidation(prev => ({
+          ...prev,
+          username: { checking: false, available: Boolean(data) },
+        }));
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('is_email_available', {
+        email_input: value,
+      });
       if (error) throw error;
 
       setValidation(prev => ({
         ...prev,
-        [field]: { checking: false, available: data.length === 0 }
+        email: { checking: false, available: Boolean(data) },
       }));
-    } catch (error) {
-      console.error(`Error validating ${field}:`, error);
+    } catch {
       setValidation(prev => ({
         ...prev,
-        [field]: { checking: false, available: null }
+        [field]: { checking: false, available: null },
       }));
     }
   };
