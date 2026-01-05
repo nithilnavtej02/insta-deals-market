@@ -4,14 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, Eye, EyeOff, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { validatePassword, sanitizeInput } from "@/utils/security";
 
 const CreateAccount = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -204,52 +203,37 @@ const CreateAccount = () => {
       const emailHash = await hashCode(pendingData.email.toLowerCase());
       const codeHash = await hashCode(otp);
 
-      // Verify OTP from database
-      const { data: otpRecord, error: fetchError } = await supabase
-        .from('signup_email_otps')
-        .select('*')
-        .eq('email_hash', emailHash)
-        .eq('code_hash', codeHash)
-        .eq('purpose', 'signup')
-        .is('consumed_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (!otpRecord) {
-        toast.error("Invalid or expired code. Please try again.");
-        return;
-      }
-
-      // Check attempts
-      if (otpRecord.attempts >= 5) {
-        toast.error("Too many attempts. Please request a new code.");
-        return;
-      }
-
-      // Mark OTP as consumed
-      await supabase
-        .from('signup_email_otps')
-        .update({ consumed_at: new Date().toISOString() })
-        .eq('id', otpRecord.id);
-
-      // Now create the account
-      const { data, error } = await signUp(pendingData.email, pendingData.password, {
-        username: pendingData.username,
-        email: pendingData.email,
-        phone: pendingData.phone,
-        mobile_number: pendingData.phone,
+      // Call edge function to verify OTP and create account (via Admin API)
+      const { data, error } = await supabase.functions.invoke('complete-signup', {
+        body: {
+          email: pendingData.email,
+          password: pendingData.password,
+          username: pendingData.username,
+          phone: pendingData.phone,
+          emailHash,
+          codeHash,
+        },
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
-          toast.error("Email already exists");
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message || "Verification failed");
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Auto sign-in after account creation
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: pendingData.email,
+        password: pendingData.password,
+      });
+
+      if (signInError) {
+        toast.success("Account created! Please sign in.");
+        navigate("/auth");
         return;
       }
 

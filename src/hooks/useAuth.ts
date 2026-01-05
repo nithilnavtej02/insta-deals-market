@@ -39,25 +39,6 @@ export function useAuth() {
       }
     });
     
-    // Send verification email with code (optional - only if email is provided)
-    if (data?.user && email && !email.includes('@temp.local')) {
-      try {
-        // Generate a 6-digit verification code
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Call edge function to send email
-        await supabase.functions.invoke('send-verification-code', {
-          body: {
-            email,
-            username: userData?.username || 'User',
-            code: verificationCode
-          }
-        });
-      } catch {
-        // Don't fail signup if email fails
-      }
-    }
-    
     return { data, error };
   };
 

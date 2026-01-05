@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.get-usd-rate]
 verify_jwt = false
+
+[functions.complete-signup]
+verify_jwt = false
