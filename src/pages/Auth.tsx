@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -22,7 +21,6 @@ const Auth = () => {
       return;
     }
 
-    // Require email since profiles are no longer publicly readable (security)
     if (!email.includes("@")) {
       toast.error("Please sign in using your email address");
       return;
@@ -33,10 +31,8 @@ const Auth = () => {
       const { data, error } = await signIn(email, password);
 
       if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          toast.error("Email verification is enabled in Supabase. Disable 'Confirm email' to use custom OTP-only signup.");
-        } else if (error.message.includes('Invalid login')) {
-          toast.error("Invalid credentials");
+        if (error.message.includes('Invalid login')) {
+          toast.error("Invalid email or password");
         } else {
           toast.error(error.message);
         }
@@ -64,97 +60,64 @@ const Auth = () => {
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-semibold ml-4">
-          {isOtpStep ? "Verify OTP" : "Sign In"}
-        </h1>
+        <h1 className="text-xl font-semibold ml-4">Sign In</h1>
       </div>
 
       <div className="p-6 max-w-md mx-auto space-y-6">
-        {!isOtpStep ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email or Username</Label>
-              <Input
-                id="email"
-                type="text"
-                placeholder="Enter your email or username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12"
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-12"
+          />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pr-12"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-12 pr-12"
+            />
             <Button
-              variant="reown"
-              size="lg"
-              className="w-full"
-              onClick={handleLogin}
-              disabled={loading}
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              onClick={() => setShowPassword(!showPassword)}
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
-          </>
-        ) : (
-          <>
-            <div className="text-center">
-              <p className="text-muted-foreground mb-4">
-                We've sent a verification code to {email}
-              </p>
-            </div>
+          </div>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="otp">Enter OTP</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="Enter 6-digit code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="h-12 text-center text-lg tracking-widest"
-                maxLength={6}
-              />
-            </div>
+        <Button
+          variant="reown"
+          size="lg"
+          className="w-full"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? "Signing In..." : "Sign In"}
+        </Button>
 
-            <Button
-              variant="reown"
-              size="lg"
-              className="w-full"
-              onClick={handleLogin}
-              disabled={loading}
-            >
-              {loading ? "Verifying..." : "Verify & Sign In"}
-            </Button>
-
-            <div className="text-center">
-              <Button variant="link" onClick={() => navigate('/forgot-password')}>
-                Didn't receive code? Resend
-              </Button>
-            </div>
-          </>
-        )}
+        <div className="text-center">
+          <Button
+            variant="link"
+            className="text-sm text-muted-foreground"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </Button>
+        </div>
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
