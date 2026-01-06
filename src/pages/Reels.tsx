@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag, X } from "lucide-react";
+import { Heart, MessageCircle, Share, Bookmark, Play, ShoppingBag, X, Pause, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { useSavedReels } from "@/hooks/useSavedReels";
 import { useReelsLikes } from "@/hooks/useReelsLikes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Reels = () => {
   const navigate = useNavigate();
@@ -16,9 +18,11 @@ const Reels = () => {
   const { saveReel, unsaveReel, isSaved } = useSavedReels();
   const { isLiked, toggleLike } = useReelsLikes();
   const [playingReelId, setPlayingReelId] = useState<string | null>(null);
+  const [mutedReels, setMutedReels] = useState<Set<string>>(new Set());
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const [shareSheet, setShareSheet] = useState<{isOpen: boolean, reel: any}>({isOpen: false, reel: null});
   const [reelUploaders, setReelUploaders] = useState<{[key: string]: any}>({});
+  const isMobile = useIsMobile();
   
   // Fetch uploader profiles for reels
   useEffect(() => {
@@ -50,8 +54,6 @@ const Reels = () => {
     return num.toString();
   };
 
-
-
   const toggleSave = async (reelId: string) => {
     try {
       if (isSaved(reelId)) {
@@ -64,6 +66,21 @@ const Reels = () => {
     } catch (error) {
       toast.error("Failed to save reel");
     }
+  };
+
+  const toggleMute = (reelId: string) => {
+    const video = videoRefs.current[reelId];
+    if (!video) return;
+
+    const newMutedReels = new Set(mutedReels);
+    if (mutedReels.has(reelId)) {
+      newMutedReels.delete(reelId);
+      video.muted = false;
+    } else {
+      newMutedReels.add(reelId);
+      video.muted = true;
+    }
+    setMutedReels(newMutedReels);
   };
 
   const togglePlay = async (reelId: string) => {
@@ -87,279 +104,415 @@ const Reels = () => {
     }
   };
 
-  return (
-    <div className="h-screen overflow-hidden bg-black">
-      <div className="lg:flex lg:justify-center lg:items-start lg:min-h-screen lg:bg-black lg:p-4 lg:pt-8">
-        <div className="w-full lg:max-w-[420px] mx-auto h-screen lg:h-auto">{/* Mobile-like view without constraints */}
-          {/* Header */}
-          <div className="px-5 py-4 bg-black">
-            <h1 className="text-2xl font-bold text-white">Product Reels</h1>
-            <p className="text-gray-300 text-base mt-1">Discover amazing products</p>
+  // Mobile View - Fullscreen TikTok style
+  if (isMobile) {
+    return (
+      <div className="h-screen overflow-hidden bg-black">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-20 px-5 pt-12 pb-4 bg-gradient-to-b from-black/60 to-transparent">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-white" />
+              <h1 className="text-xl font-bold text-white">Reels</h1>
+            </div>
           </div>
+        </div>
 
-          {/* Reels Container */}
-          <div 
-            className="overflow-y-scroll snap-y snap-mandatory"
-            style={{ 
-              height: 'calc(100vh - 88px)',
-              scrollSnapType: 'y mandatory',
-              scrollBehavior: 'smooth'
-            }}
-          >
-            {backendReels.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-white">
-                <div className="text-center">
-                  <p className="text-lg mb-2">No reels available</p>
-                  <p className="text-gray-400">Check back later for new content!</p>
-                </div>
+        {/* Reels Container */}
+        <div 
+          className="overflow-y-scroll snap-y snap-mandatory h-full"
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full border-2 border-white/30 border-t-white animate-spin mx-auto mb-4" />
+                <p className="text-white/80">Loading reels...</p>
               </div>
-            ) : (
-              backendReels.map((reel, index) => (
+            </div>
+          ) : backendReels.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-white">
+              <div className="text-center px-8">
+                <Sparkles className="h-16 w-16 text-white/30 mx-auto mb-4" />
+                <p className="text-xl font-semibold mb-2">No reels available</p>
+                <p className="text-white/60">Check back later for new content!</p>
+              </div>
+            </div>
+          ) : (
+            backendReels.map((reel) => (
               <div 
                 key={reel.id} 
-                className="relative snap-start px-3 py-2"
-                style={{ height: '75vh' }}
+                className="relative snap-start h-screen w-full"
               >
-                <div className="relative h-full w-full rounded-2xl overflow-hidden bg-gray-800">
-                  {/* Video Player */}
+                {/* Video/Image */}
+                <div className="absolute inset-0 bg-black">
                   {reel.video_url ? (
-                    <>
-                      <video
-                        ref={(el) => (videoRefs.current[reel.id] = el)}
-                        src={reel.video_url}
-                        poster={reel.thumbnail_url}
-                        className="w-full h-full object-contain bg-black"
-                        loop
-                        playsInline
-                        onClick={() => togglePlay(reel.id)}
-                      />
-                      
-                      {/* Play/Pause Button Overlay */}
-                      {playingReelId !== reel.id && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80"
-                            onClick={() => togglePlay(reel.id)}
-                          >
-                            <Play className="h-8 w-8 text-white fill-white" />
-                          </Button>
-                        </div>
-                      )}
-                    </>
+                    <video
+                      ref={(el) => (videoRefs.current[reel.id] = el)}
+                      src={reel.video_url}
+                      poster={reel.thumbnail_url}
+                      className="w-full h-full object-contain"
+                      loop
+                      playsInline
+                      muted={mutedReels.has(reel.id)}
+                      onClick={() => togglePlay(reel.id)}
+                    />
                   ) : (
-                    <>
-                      {/* Fallback to thumbnail if no video */}
-                      <img
-                        src={reel.thumbnail_url}
-                        alt={reel.title}
-                        className="w-full h-full object-contain bg-black"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80"
-                          disabled
-                        >
-                          <Play className="h-8 w-8 text-white fill-white" />
-                        </Button>
-                      </div>
-                    </>
+                    <img
+                      src={reel.thumbnail_url}
+                      alt={reel.title}
+                      className="w-full h-full object-contain"
+                    />
                   )}
+                </div>
 
-                  {/* Buy Button - Top Right */}
-                  {reel.buy_link && (
-                    <Button
-                      className="absolute top-5 right-5 bg-primary/95 hover:bg-primary text-white px-3 py-2 rounded-full flex items-center gap-2 shadow-lg"
-                      size="sm"
-                      onClick={() => {
-                        if (reel.buy_link) {
-                          window.open(reel.buy_link, '_blank');
-                        }
+                {/* Play/Pause Overlay */}
+                {playingReelId !== reel.id && reel.video_url && (
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center z-10"
+                    onClick={() => togglePlay(reel.id)}
+                  >
+                    <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                      <Play className="h-10 w-10 text-white fill-white ml-1" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Buy Button */}
+                {reel.buy_link && (
+                  <Button
+                    className="absolute top-24 right-4 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl z-20"
+                    onClick={() => window.open(reel.buy_link!, '_blank')}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Buy Now</span>
+                  </Button>
+                )}
+
+                {/* Bottom Gradient */}
+                <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+                {/* Content Info */}
+                <div className="absolute bottom-28 left-4 right-20 z-10">
+                  {/* Creator */}
+                  {reelUploaders[reel.admin_id] && (
+                    <div 
+                      className="flex items-center gap-3 mb-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/profile/${reelUploaders[reel.admin_id].user_id}`);
                       }}
                     >
-                      <ShoppingBag className="h-3.5 w-3.5" />
-                      <span className="text-xs font-semibold">Buy</span>
-                    </Button>
+                      <Avatar className="w-10 h-10 ring-2 ring-white/50">
+                        <AvatarImage src={reelUploaders[reel.admin_id].avatar_url} />
+                        <AvatarFallback className="bg-primary text-white">
+                          {reelUploaders[reel.admin_id].username?.slice(0, 2).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-white font-semibold text-sm">@{reelUploaders[reel.admin_id].username || 'Unknown'}</p>
+                      </div>
+                    </div>
                   )}
+                  
+                  <h3 className="text-lg font-bold text-white mb-2">{reel.title}</h3>
+                  <p className="text-sm text-white/80 line-clamp-2">{reel.description}</p>
+                </div>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/70 to-transparent" />
-
-                  {/* Content Info */}
-                  <div className="absolute bottom-5 left-5 right-24">
-                    <h3 className="text-lg font-bold text-white mb-1.5">{reel.title}</h3>
-                    <p className="text-sm text-gray-300 mb-2.5 line-clamp-2 leading-5">
-                      {reel.description}
-                    </p>
-                    {reelUploaders[reel.admin_id] && (
-                      <p 
-                        className="text-sm font-medium text-white cursor-pointer hover:underline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${reelUploaders[reel.admin_id].user_id}`);
-                        }}
-                      >
-                        @{reelUploaders[reel.admin_id].username || 'Unknown'}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Action Bar - Right Side */}
-                  <div className="absolute right-5 bottom-24 flex flex-col items-center gap-4">
-                    {/* Like Button */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "w-11 h-11 rounded-full backdrop-blur-sm border-0",
-                          isLiked(reel.id)
-                            ? 'bg-red-500/30' 
-                            : 'bg-white/20 hover:bg-white/30'
-                        )}
-                        onClick={() => toggleLike(reel.id)}
-                      >
-                        <Heart 
-                          className={cn(
-                            "h-6 w-6",
-                            isLiked(reel.id) 
-                              ? 'fill-red-500 text-red-500' 
-                              : 'text-white'
-                          )} 
-                        />
-                      </Button>
-                      <span className="text-white text-xs font-semibold">
-                        {formatNumber(reel.likes || 0)}
-                      </span>
+                {/* Action Buttons - Right Side */}
+                <div className="absolute right-4 bottom-32 flex flex-col items-center gap-5 z-20">
+                  {/* Like */}
+                  <button
+                    className="flex flex-col items-center gap-1"
+                    onClick={() => toggleLike(reel.id)}
+                  >
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md",
+                      isLiked(reel.id) ? "bg-red-500/30" : "bg-white/20"
+                    )}>
+                      <Heart className={cn(
+                        "h-6 w-6",
+                        isLiked(reel.id) ? "fill-red-500 text-red-500" : "text-white"
+                      )} />
                     </div>
+                    <span className="text-white text-xs font-semibold">{formatNumber(reel.likes || 0)}</span>
+                  </button>
 
-                    {/* Comment Button */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                        onClick={() => navigate(`/reel/${reel.id}/comments`)}
-                      >
-                        <MessageCircle className="h-6 w-6 text-white" />
-                      </Button>
-                      <span className="text-white text-xs font-semibold">
-                        {formatNumber(reel.comments || 0)}
-                      </span>
+                  {/* Comment */}
+                  <button
+                    className="flex flex-col items-center gap-1"
+                    onClick={() => navigate(`/reel/${reel.id}/comments`)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <MessageCircle className="h-6 w-6 text-white" />
                     </div>
+                    <span className="text-white text-xs font-semibold">{formatNumber(reel.comments || 0)}</span>
+                  </button>
 
-                    {/* Share Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                      onClick={() => setShareSheet({isOpen: true, reel})}
-                    >
+                  {/* Share */}
+                  <button
+                    className="flex flex-col items-center gap-1"
+                    onClick={() => setShareSheet({isOpen: true, reel})}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                       <Share className="h-6 w-6 text-white" />
-                    </Button>
+                    </div>
+                    <span className="text-white text-xs font-semibold">Share</span>
+                  </button>
 
-                    {/* Save Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0"
-                      onClick={() => toggleSave(reel.id)}
+                  {/* Save */}
+                  <button
+                    className="flex flex-col items-center gap-1"
+                    onClick={() => toggleSave(reel.id)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Bookmark className={cn(
+                        "h-6 w-6 text-white",
+                        isSaved(reel.id) && "fill-white"
+                      )} />
+                    </div>
+                    <span className="text-white text-xs font-semibold">Save</span>
+                  </button>
+
+                  {/* Mute/Unmute */}
+                  {reel.video_url && (
+                    <button
+                      className="flex flex-col items-center gap-1"
+                      onClick={() => toggleMute(reel.id)}
                     >
-                      <Bookmark 
-                        className={cn(
-                          "h-6 w-6 text-white",
-                          isSaved(reel.id) && 'fill-white'
-                        )} 
-                      />
-                    </Button>
-                  </div>
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                        {mutedReels.has(reel.id) ? (
+                          <VolumeX className="h-6 w-6 text-white" />
+                        ) : (
+                          <Volume2 className="h-6 w-6 text-white" />
+                        )}
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
-              ))
-            )}
+            ))
+          )}
+        </div>
+
+        {/* Share Sheet */}
+        {shareSheet.isOpen && shareSheet.reel && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-end" onClick={() => setShareSheet({isOpen: false, reel: null})}>
+            <div 
+              className="bg-card rounded-t-3xl w-full max-h-[70vh] overflow-y-auto animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <h2 className="text-lg font-bold text-foreground">Share to</h2>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShareSheet({isOpen: false, reel: null})}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-4 gap-4">
+                  {[
+                    { name: "WhatsApp", icon: "💬", color: "bg-green-500", action: () => {
+                      window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
+                    }},
+                    { name: "Instagram", icon: "📷", color: "bg-gradient-to-br from-purple-500 to-pink-500", action: () => {
+                      navigator.clipboard.writeText(`${window.location.origin}/reels?id=${shareSheet.reel.id}`);
+                      toast.success("Link copied!");
+                    }},
+                    { name: "Twitter", icon: "🐦", color: "bg-black", action: () => {
+                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareSheet.reel.title)}&url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
+                    }},
+                    { name: "Copy Link", icon: "🔗", color: "bg-gray-500", action: () => {
+                      navigator.clipboard.writeText(`${window.location.origin}/reels?id=${shareSheet.reel.id}`);
+                      toast.success("Link copied!");
+                    }},
+                  ].map((option) => (
+                    <button
+                      key={option.name}
+                      onClick={option.action}
+                      className="flex flex-col items-center gap-2 p-3"
+                    >
+                      <div className={`w-14 h-14 rounded-full ${option.color} flex items-center justify-center text-2xl shadow-lg`}>
+                        {option.icon}
+                      </div>
+                      <span className="text-xs font-medium text-foreground">{option.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <BottomNavigation />
+      </div>
+    );
+  }
+
+  // Desktop View - Grid Layout
+  return (
+    <div className="min-h-screen bg-muted/30 pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-primary via-primary to-primary-dark">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Product Reels</h1>
+              <p className="text-white/80">Discover amazing products through short videos</p>
+            </div>
           </div>
         </div>
       </div>
 
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full border-2 border-primary/30 border-t-primary animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading reels...</p>
+            </div>
+          </div>
+        ) : backendReels.length === 0 ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Sparkles className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-xl font-semibold text-foreground mb-2">No reels available</p>
+              <p className="text-muted-foreground">Check back later for new content!</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-6">
+            {backendReels.map((reel) => (
+              <div 
+                key={reel.id}
+                className="group relative bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer"
+                style={{ aspectRatio: '9/16' }}
+              >
+                {/* Thumbnail/Video */}
+                <div className="absolute inset-0 bg-black">
+                  {reel.video_url ? (
+                    <video
+                      ref={(el) => (videoRefs.current[reel.id] = el)}
+                      src={reel.video_url}
+                      poster={reel.thumbnail_url}
+                      className="w-full h-full object-cover"
+                      loop
+                      playsInline
+                      muted
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.pause();
+                        e.currentTarget.currentTime = 0;
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={reel.thumbnail_url}
+                      alt={reel.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+
+                {/* Play icon overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                  <div className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
+                    <Play className="h-8 w-8 text-white fill-white ml-1" />
+                  </div>
+                </div>
+
+                {/* Gradient overlay */}
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  {reelUploaders[reel.admin_id] && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="w-8 h-8 ring-2 ring-white/50">
+                        <AvatarImage src={reelUploaders[reel.admin_id].avatar_url} />
+                        <AvatarFallback className="bg-primary text-white text-xs">
+                          {reelUploaders[reel.admin_id].username?.slice(0, 2).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-white/90 text-sm font-medium">@{reelUploaders[reel.admin_id].username}</span>
+                    </div>
+                  )}
+                  <h3 className="text-white font-semibold line-clamp-2 text-sm">{reel.title}</h3>
+                  <div className="flex items-center gap-4 mt-2 text-white/80 text-xs">
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-3.5 w-3.5" />
+                      {formatNumber(reel.likes || 0)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      {formatNumber(reel.comments || 0)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Buy button */}
+                {reel.buy_link && (
+                  <Button
+                    className="absolute top-3 right-3 bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(reel.buy_link!, '_blank');
+                    }}
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5 mr-1" />
+                    Buy
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Share Sheet */}
       {shareSheet.isOpen && shareSheet.reel && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-background dark:bg-card rounded-t-3xl w-full max-h-[85vh] overflow-y-auto animate-slide-up">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">Share to</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShareSheet({isOpen: false, reel: null})}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShareSheet({isOpen: false, reel: null})}>
+          <div 
+            className="bg-card rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">Share Reel</h2>
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShareSheet({isOpen: false, reel: null})}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="p-4">
+            <div className="p-5">
               <div className="grid grid-cols-4 gap-4">
                 {[
                   { name: "WhatsApp", icon: "💬", color: "bg-green-500", action: () => {
-                    window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
+                    window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this reel: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`)}`, '_blank');
                   }},
-                  { name: "Instagram", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500", action: () => {
-                    navigator.clipboard.writeText(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`);
-                    toast.success("Link copied! Share it on Instagram");
+                  { name: "Twitter", icon: "🐦", color: "bg-black", action: () => {
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareSheet.reel.title)}&url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
                   }},
-                  { name: "TikTok", icon: "🎵", color: "bg-black", action: () => {
-                    navigator.clipboard.writeText(`Check out this reel on ReOWN: ${shareSheet.reel.title} - ${window.location.origin}/reels?id=${shareSheet.reel.id}`);
-                    toast.success("Link copied! Share it on TikTok");
-                  }},
-                  { name: "X (Twitter)", icon: "🐦", color: "bg-black", action: () => {
-                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this reel on ReOWN: ${shareSheet.reel.title}`)}&url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
-                  }},
-                  { name: "LinkedIn", icon: "💼", color: "bg-blue-600", action: () => {
-                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
-                  }},
-                  { name: "Snapchat", icon: "👻", color: "bg-yellow-400", action: () => {
-                    window.open(`https://www.snapchat.com/share?url=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
-                  }},
-                  { name: "Facebook", icon: "👥", color: "bg-blue-500", action: () => {
+                  { name: "Facebook", icon: "👥", color: "bg-blue-600", action: () => {
                     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + '/reels?id=' + shareSheet.reel.id)}`, '_blank');
                   }},
-                  { name: "Copy Link", icon: "🔗", color: "bg-gray-500", action: () => {
+                  { name: "Copy", icon: "🔗", color: "bg-gray-500", action: () => {
                     navigator.clipboard.writeText(`${window.location.origin}/reels?id=${shareSheet.reel.id}`);
-                    toast.success("Link copied to clipboard!");
+                    toast.success("Link copied!");
                   }},
                 ].map((option) => (
                   <button
                     key={option.name}
                     onClick={option.action}
-                    className="flex flex-col items-center gap-2 p-3 hover:bg-muted/50 rounded-lg transition-colors"
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted transition-colors"
                   >
-                    <div className={`w-12 h-12 rounded-full ${option.color} flex items-center justify-center text-white text-xl`}>
+                    <div className={`w-14 h-14 rounded-full ${option.color} flex items-center justify-center text-2xl shadow-lg`}>
                       {option.icon}
                     </div>
-                    <span className="text-xs font-medium text-center text-foreground">{option.name}</span>
+                    <span className="text-xs font-medium text-foreground">{option.name}</span>
                   </button>
                 ))}
               </div>
-            </div>
-            {/* Additional Actions */}
-            <div className="border-t border-border p-4 space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => {
-                  toast.info("Report feature coming soon");
-                  setShareSheet({isOpen: false, reel: null});
-                }}
-              >
-                Report this content
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => {
-                  toast.info("Not interested feature coming soon");
-                  setShareSheet({isOpen: false, reel: null});
-                }}
-              >
-                Not interested
-              </Button>
             </div>
           </div>
         </div>
