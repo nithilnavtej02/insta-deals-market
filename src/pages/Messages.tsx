@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, MessageSquare, Users, Settings, ChevronRight } from "lucide-react";
+import { Search, MessageSquare, Users, Settings, ChevronRight, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,74 +41,120 @@ const Messages = () => {
     );
   }
 
-  // Mobile View - Keep existing design
+  // Mobile View - Professional Redesign
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="bg-white border-b px-4 py-4">
-          <h1 className="text-xl font-semibold mb-2">Messages</h1>
-          <p className="text-muted-foreground text-sm mb-4">Secure & anonymous communication</p>
+        {/* Premium Header with Gradient */}
+        <div className="bg-gradient-to-br from-primary via-primary to-primary-dark px-5 pt-12 pb-6 rounded-b-3xl shadow-lg">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Messages</h1>
+              <p className="text-white/70 text-sm flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                End-to-end encrypted
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+              <MessageSquare className="h-5 w-5 text-white" />
+            </div>
+          </div>
           
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Search Bar */}
+          <div className="relative mt-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-11 h-12 bg-white border-0 rounded-2xl shadow-sm placeholder:text-muted-foreground/60"
             />
           </div>
         </div>
 
-        <div className="divide-y">
-          {loading ? (
-            <div className="p-8 text-center text-muted-foreground">Loading conversations...</div>
-          ) : filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No conversations yet</div>
-          ) : (
-            filteredConversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => navigate(`/chat/${conversation.id}`)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-primary to-primary-dark"></div>
-                  </div>
+        {/* Quick Stats */}
+        <div className="px-5 -mt-3">
+          <div className="bg-card rounded-2xl shadow-md border border-border/50 p-4 flex items-center justify-around">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{conversations.length}</p>
+              <p className="text-xs text-muted-foreground">Chats</p>
+            </div>
+            <Separator orientation="vertical" className="h-10" />
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{conversations.filter(c => c.messages).length}</p>
+              <p className="text-xs text-muted-foreground">Active</p>
+            </div>
+            <Separator orientation="vertical" className="h-10" />
+            <div className="text-center">
+              <div className="w-6 h-6 rounded-full bg-green-500 mx-auto flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-white" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Online</p>
+            </div>
+          </div>
+        </div>
 
-                  <UserPresence userId={conversation.profiles?.user_id}>
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={conversation.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {conversation.profiles?.avatar_url ? 
-                          conversation.profiles?.username?.slice(0, 2).toUpperCase() : 
-                          getRandomAvatarEmoji(conversation.profiles?.username || 'user')
-                        }
-                      </AvatarFallback>
-                    </Avatar>
-                  </UserPresence>
+        {/* Conversations List */}
+        <div className="px-5 mt-6">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Recent Conversations</h2>
+          
+          <div className="space-y-3">
+            {loading ? (
+              <div className="py-12 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <MessageSquare className="h-6 w-6 text-primary" />
+                </div>
+                <p className="text-muted-foreground">Loading conversations...</p>
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">No conversations yet</h3>
+                <p className="text-sm text-muted-foreground">Start chatting with sellers!</p>
+              </div>
+            ) : (
+              filteredConversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  className="bg-card rounded-2xl border border-border/50 p-4 active:scale-[0.98] transition-all duration-200 shadow-sm"
+                  onClick={() => navigate(`/chat/${conversation.id}`)}
+                >
+                  <div className="flex items-center gap-4">
+                    <UserPresence userId={conversation.profiles?.user_id}>
+                      <Avatar className="w-14 h-14 ring-2 ring-primary/20">
+                        <AvatarImage src={conversation.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-white text-lg font-semibold">
+                          {conversation.profiles?.avatar_url ? 
+                            conversation.profiles?.username?.slice(0, 2).toUpperCase() : 
+                            getRandomAvatarEmoji(conversation.profiles?.username || 'user')
+                          }
+                        </AvatarFallback>
+                      </Avatar>
+                    </UserPresence>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div>
-                        <h3 className="font-medium text-sm truncate">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-foreground truncate">
                           {conversation.profiles?.display_name || conversation.profiles?.username || 'User'}
                         </h3>
-                        <p className="text-xs text-primary">@{conversation.profiles?.username || 'unknown'}</p>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          {formatMessageDate(conversation.updated_at)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">{formatMessageDate(conversation.updated_at)}</span>
-                      </div>
+                      <p className="text-sm text-primary font-medium mb-1">@{conversation.profiles?.username || 'unknown'}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {conversation.messages?.content || 'Tap to start chatting'}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {conversation.messages?.content || 'No messages yet'}
-                    </p>
+
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
 
         <BottomNavigation />

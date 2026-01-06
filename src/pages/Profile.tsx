@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Package, Star, Settings, Shield, Bell, LogOut, MapPin, Edit, User, ShoppingCart, ClipboardList, Plus, Camera, Award, TrendingUp } from "lucide-react";
+import { Heart, MessageCircle, Package, Star, Settings, Shield, Bell, LogOut, MapPin, Edit, User, ShoppingCart, ClipboardList, Plus, Camera, Award, TrendingUp, ChevronRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -363,206 +363,199 @@ const Profile = () => {
     </>
   );
 
-  // Mobile View - Keep existing design
+  // Mobile View - Professional Redesign
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="bg-background px-4 py-6 relative">
-          <div className="flex items-start gap-3 mb-4 relative">
-            <Avatar 
-              className="w-20 h-20 cursor-pointer relative"
-              onClick={openAvatarPicker}
-            >
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary text-white text-lg">
-                {profile?.avatar_url ? 
-                  ((profile?.display_name && profile.display_name.slice(0, 2)) || 
-                   (profile?.username && profile.username.slice(0, 2)) || 'U') : 
-                  getRandomAvatarEmoji(profile?.username || 'user')
-                }
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1">
-              <h1 className="text-base font-semibold">@{profile?.username || 'user'}</h1>
-              <p className="text-xl font-bold text-foreground">{profile?.display_name || 'User'}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <MapPin className="h-3 w-3 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{profile?.location || 'Location not set'}</span>
-              </div>
+      <div className="min-h-screen bg-background pb-24">
+        {/* Premium Header with Gradient */}
+        <div className="bg-gradient-to-br from-primary via-primary to-primary-dark relative overflow-hidden">
+          {/* Decorative circles */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          
+          <div className="px-5 pt-12 pb-20 relative">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-xl font-bold text-white">My Profile</h1>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 hover:bg-white/30 text-white rounded-full">
+                    <Edit className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowEditProfile(true)}>
+                    <User className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowEditName(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Name
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-
-            {profile?.verified && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs border-green-500 text-green-600 hover:bg-green-50 rounded-full"
-              >
-                ✓ Verified
-              </Button>
-            )}
-
-            <Button
-              onClick={openAvatarPicker}
-              size="icon"
-              aria-label="Change profile picture"
-              className="absolute -bottom-2 left-14 rounded-full w-7 h-7 shadow-lg bg-primary hover:bg-primary/90 z-10"
-            >
-              <Plus className="h-3 w-3 text-white" />
-            </Button>
           </div>
+        </div>
 
-          <div className="absolute top-4 right-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
-                  <Edit className="h-4 w-4" />
+        {/* Profile Card - Floating */}
+        <div className="px-5 -mt-16 relative z-10">
+          <div className="bg-card rounded-3xl shadow-xl border border-border/50 p-6">
+            {/* Avatar */}
+            <div className="flex flex-col items-center -mt-16">
+              <div className="relative">
+                <Avatar 
+                  className="w-24 h-24 ring-4 ring-background shadow-lg cursor-pointer"
+                  onClick={openAvatarPicker}
+                >
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-white text-2xl font-bold">
+                    {profile?.avatar_url ? 
+                      ((profile?.display_name && profile.display_name.slice(0, 2)) || 
+                       (profile?.username && profile.username.slice(0, 2)) || 'U') : 
+                      getRandomAvatarEmoji(profile?.username || 'user')
+                    }
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  onClick={openAvatarPicker}
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 rounded-full w-8 h-8 shadow-lg bg-primary hover:bg-primary/90"
+                >
+                  <Camera className="h-4 w-4 text-white" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowEditProfile(true)}>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span>Edit Profile</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEditName(true)}>
-                  <div className="flex items-center gap-2">
-                    <Edit className="h-4 w-4" />
-                    <span>Edit Name</span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <div className="flex items-center gap-3 mt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowFollowers(true)} 
-              className="flex-1 h-11 rounded-full border-primary/20"
-            >
-              <span className="text-primary font-semibold">Followers</span>
-            </Button>
-            <Button 
-              onClick={() => setShowFollowing(true)} 
-              className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90"
-            >
-              <span className="text-white font-semibold">Following</span>
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-6 mt-6 text-center justify-center">
-            <div>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Package className="h-5 w-5 text-primary" />
               </div>
-              <p className="text-2xl font-bold">{profile?.items_sold || 0}</p>
-              <p className="text-xs text-muted-foreground">Items Sold</p>
+
+              {/* Name & Username */}
+              <h2 className="text-xl font-bold text-foreground mt-4">{profile?.display_name || 'User'}</h2>
+              <p className="text-primary font-medium">@{profile?.username || 'user'}</p>
+              
+              {profile?.verified && (
+                <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-100">
+                  <Award className="h-3 w-3 mr-1" />
+                  Verified
+                </Badge>
+              )}
+
+              <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>{profile?.location || 'Location not set'}</span>
+              </div>
             </div>
-            <div>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Star className="h-5 w-5 text-primary" />
+
+            {/* Stats Row */}
+            <div className="flex items-center justify-around mt-6 pt-6 border-t border-border">
+              <button onClick={() => setShowFollowers(true)} className="text-center">
+                <p className="text-2xl font-bold text-foreground">{followers.length}</p>
+                <p className="text-xs text-muted-foreground">Followers</p>
+              </button>
+              <Separator orientation="vertical" className="h-10" />
+              <button onClick={() => setShowFollowing(true)} className="text-center">
+                <p className="text-2xl font-bold text-foreground">{following.length}</p>
+                <p className="text-xs text-muted-foreground">Following</p>
+              </button>
+              <Separator orientation="vertical" className="h-10" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-primary">{profile?.items_sold || 0}</p>
+                <p className="text-xs text-muted-foreground">Sold</p>
               </div>
-              <p className="text-2xl font-bold">{profile?.rating ? profile.rating.toFixed(1) : '0.0'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Stats */}
+        <div className="px-5 mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Performance</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-card rounded-2xl p-4 border border-border/50 text-center">
+              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-2">
+                <Star className="h-6 w-6 text-yellow-600" />
+              </div>
+              <p className="text-xl font-bold text-foreground">{profile?.rating ? profile.rating.toFixed(1) : '0.0'}</p>
               <p className="text-xs text-muted-foreground">Rating</p>
             </div>
-            <div>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <MessageCircle className="h-5 w-5 text-primary" />
+            <div className="bg-card rounded-2xl p-4 border border-border/50 text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+                <MessageCircle className="h-6 w-6 text-blue-600" />
               </div>
-              <p className="text-2xl font-bold">{profile?.total_reviews || 0}</p>
+              <p className="text-xl font-bold text-foreground">{profile?.total_reviews || 0}</p>
               <p className="text-xs text-muted-foreground">Reviews</p>
             </div>
-          </div>
-
-          {renderDialogs()}
-        </div>
-
-        <div className="px-4 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Cart</h2>
-          <Card onClick={() => navigate('/cart')} className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <CardContent className="py-6">
-              {cartItems.length === 0 ? (
-                <div className="text-center">
-                  <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground mb-2">Your cart is empty</p>
-                  <Button size="sm" variant="outline" onClick={(e) => {
-                    e.stopPropagation();
-                    navigate('/home');
-                  }}>Start Shopping</Button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <ShoppingCart className="h-12 w-12 text-primary mx-auto mb-2" />
-                  <p className="font-medium">{getCartItemCount()} items in cart</p>
-                  <Button size="sm" className="mt-2">View Cart</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="px-4 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
-          {recentActivity.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No recent activity</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {recentActivity.map((activity, i) => (
-                <Card key={i}>
-                  <CardContent className="py-3">
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="bg-card rounded-2xl p-4 border border-border/50 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
+                <Package className="h-6 w-6 text-green-600" />
+              </div>
+              <p className="text-xl font-bold text-foreground">{profile?.items_sold || 0}</p>
+              <p className="text-xs text-muted-foreground">Items</p>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="px-4">
-          <h2 className="text-lg font-semibold mb-3">Account</h2>
+        {/* Quick Actions */}
+        <div className="px-5 mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</h3>
           <div className="space-y-2">
-            {accountOptions.map((option) => (
-              <Card 
+            {accountOptions.slice(0, 4).map((option) => (
+              <button 
                 key={option.label}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                className="w-full bg-card rounded-2xl p-4 border border-border/50 flex items-center justify-between active:scale-[0.98] transition-transform"
                 onClick={() => handleAccountOptionClick(option.label)}
               >
-                <CardContent className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <option.icon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">{option.label}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <option.icon className="h-5 w-5 text-primary" />
                   </div>
+                  <span className="font-medium text-foreground">{option.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
                   {option.count !== null && option.count > 0 && (
-                    <Badge variant="secondary">{option.count}</Badge>
+                    <Badge className="bg-primary">{option.count}</Badge>
                   )}
-                </CardContent>
-              </Card>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="px-4 mt-6 mb-8">
+        {/* Account Settings */}
+        <div className="px-5 mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Account</h3>
+          <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+            {accountOptions.slice(4).map((option, index) => (
+              <button 
+                key={option.label}
+                className={`w-full p-4 flex items-center justify-between active:bg-muted transition-colors ${index !== accountOptions.slice(4).length - 1 ? 'border-b border-border/50' : ''}`}
+                onClick={() => handleAccountOptionClick(option.label)}
+              >
+                <div className="flex items-center gap-3">
+                  <option.icon className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium text-foreground">{option.label}</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Logout */}
+        <div className="px-5 mt-6 mb-8">
           <Button 
             variant="outline" 
-            className="w-full text-red-600 border-red-200 hover:bg-red-50"
+            className="w-full h-12 text-red-600 border-red-200 hover:bg-red-50 rounded-2xl"
             onClick={handleSignOut}
           >
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="h-5 w-5 mr-2" />
             Logout
           </Button>
         </div>
 
+        {renderDialogs()}
         <BottomNavigation />
       </div>
     );
   }
 
-  // Desktop View - Professional Dashboard Layout
+  // Desktop View - Keep existing professional design
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="max-w-7xl mx-auto p-6">
