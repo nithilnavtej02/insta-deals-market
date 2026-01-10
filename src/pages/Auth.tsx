@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -41,6 +43,14 @@ const Auth = () => {
           return;
         }
         emailToUse = profileData.email;
+      }
+
+      // Store remember me preference before signing in
+      if (!rememberMe) {
+        // Clear session on browser close by setting a flag
+        sessionStorage.setItem('session_only', 'true');
+      } else {
+        sessionStorage.removeItem('session_only');
       }
 
       const { data, error } = await signIn(emailToUse, password);
@@ -114,6 +124,29 @@ const Auth = () => {
           </div>
         </div>
 
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            />
+            <Label
+              htmlFor="remember"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Remember me
+            </Label>
+          </div>
+          <Button
+            variant="link"
+            className="text-sm text-muted-foreground p-0 h-auto"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </Button>
+        </div>
+
         <Button
           variant="reown"
           size="lg"
@@ -123,16 +156,6 @@ const Auth = () => {
         >
           {loading ? "Signing In..." : "Sign In"}
         </Button>
-
-        <div className="text-center">
-          <Button
-            variant="link"
-            className="text-sm text-muted-foreground"
-            onClick={() => navigate("/forgot-password")}
-          >
-            Forgot Password?
-          </Button>
-        </div>
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
