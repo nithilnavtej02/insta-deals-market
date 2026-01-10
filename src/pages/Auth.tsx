@@ -45,13 +45,7 @@ const Auth = () => {
         emailToUse = profileData.email;
       }
 
-      // Store remember me preference before signing in
-      if (!rememberMe) {
-        // Clear session on browser close by setting a flag
-        sessionStorage.setItem('session_only', 'true');
-      } else {
-        sessionStorage.removeItem('session_only');
-      }
+      // Session is always persisted in localStorage by Supabase client
 
       const { data, error } = await signIn(emailToUse, password);
 

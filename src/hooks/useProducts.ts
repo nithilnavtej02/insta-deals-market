@@ -38,17 +38,28 @@ export interface Product {
   };
 }
 
+// Simple cache for products
+let productsCache: { data: Product[] | null; timestamp: number } = { data: null, timestamp: 0 };
+const CACHE_DURATION = 60000; // 1 minute cache
+
 export function useProducts() {
   const { user } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(productsCache.data || []);
+  const [loading, setLoading] = useState(!productsCache.data);
 
   useEffect(() => {
+    // Use cached data if available and fresh
+    if (productsCache.data && Date.now() - productsCache.timestamp < CACHE_DURATION) {
+      setProducts(productsCache.data);
+      setLoading(false);
+      return;
+    }
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
     try {
+      // Optimized query - fetch only essential fields for list view
       const { data, error } = await supabase
         .from('products')
         .select(`
@@ -69,10 +80,14 @@ export function useProducts() {
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50); // Increased limit for better UX
 
       if (error) throw error;
-      setProducts((data as unknown) as Product[] || []);
+      const typedData = (data as unknown) as Product[] || [];
+      setProducts(typedData);
+      
+      // Update cache
+      productsCache = { data: typedData, timestamp: Date.now() };
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
