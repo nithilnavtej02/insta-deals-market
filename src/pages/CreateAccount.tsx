@@ -14,14 +14,6 @@ const CreateAccount = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'form' | 'otp'>('form');
-  const [otp, setOtp] = useState("");
-  const [pendingData, setPendingData] = useState<{
-    email: string;
-    username: string;
-    password: string;
-    phone: string | null;
-  } | null>(null);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -98,21 +90,7 @@ const CreateAccount = () => {
     }
   };
 
-  // Generate 6-digit OTP
-  const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  // Hash function for OTP storage (simple hash for demo)
-  const hashCode = async (str: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
-
-  const handleSendOTP = async () => {
+  const handleCreateAccount = async () => {
     if (!formData.username || !formData.email || !formData.password) {
       toast.error("Please fill in all required fields");
       return;
@@ -140,210 +118,69 @@ const CreateAccount = () => {
       return;
     }
 
+    if (validation.username.available === false) {
+      toast.error("Username is already taken");
+      return;
+    }
+
+    if (validation.email.available === false) {
+      toast.error("Email is already registered");
+      return;
+    }
+
     setLoading(true);
     try {
-      const code = generateOTP();
-      const emailHash = await hashCode(formData.email.toLowerCase());
-      const codeHash = await hashCode(code);
+      const phone = formData.phone ? formData.countryCode + formData.phone : null;
 
-      // Store hashed OTP in database
-      const { error: otpError } = await supabase
-        .from('signup_email_otps')
-        .insert({
-          email_hash: emailHash,
-          code_hash: codeHash,
-          purpose: 'signup',
-          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
-        });
-
-      if (otpError) throw otpError;
-
-      // Send OTP via edge function
-      const { error: sendError } = await supabase.functions.invoke('send-verification-code', {
-        body: {
-          email: formData.email,
-          username: formData.username,
-          code: code,
-        },
-      });
-
-      if (sendError) throw sendError;
-
-      // Store pending data for after verification
-      setPendingData({
+      // Create user directly with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
-        username: formData.username,
         password: formData.password,
-        phone: formData.phone ? formData.countryCode + formData.phone : null,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            username: formData.username,
+            display_name: formData.username,
+            phone: phone,
+          }
+        }
       });
 
-      setStep('otp');
-      toast.success("Verification code sent to your email!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send verification code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error("Please enter the 6-digit code");
-      return;
-    }
-
-    if (!pendingData) {
-      toast.error("Session expired. Please try again.");
-      setStep('form');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const emailHash = await hashCode(pendingData.email.toLowerCase());
-      const codeHash = await hashCode(otp);
-
-      // Call edge function to verify OTP and create account (via Admin API)
-      const { data, error } = await supabase.functions.invoke('complete-signup', {
-        body: {
-          email: pendingData.email,
-          password: pendingData.password,
-          username: pendingData.username,
-          phone: pendingData.phone,
-          emailHash,
-          codeHash,
-        },
-      });
-
-      if (error) {
-        toast.error(error.message || "Verification failed");
+      if (authError) {
+        if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          toast.error("Email already registered. Please sign in instead.");
+        } else {
+          toast.error(authError.message);
+        }
         return;
       }
 
-      if (data?.error) {
-        toast.error(data.error);
+      if (!authData.user) {
+        toast.error("Failed to create account");
         return;
       }
 
-      // Auto sign-in after account creation
+      // Auto sign-in the user
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: pendingData.email,
-        password: pendingData.password,
+        email: formData.email,
+        password: formData.password,
       });
 
       if (signInError) {
+        // If auto-login fails, redirect to auth page
         toast.success("Account created! Please sign in.");
         navigate("/auth");
         return;
       }
 
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully! Welcome to ReOwn!");
       navigate("/home");
     } catch (error: any) {
-      toast.error(error.message || "Verification failed");
+      toast.error(error.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
   };
-
-  const handleResendOTP = async () => {
-    if (!pendingData) return;
-
-    setLoading(true);
-    try {
-      const code = generateOTP();
-      const emailHash = await hashCode(pendingData.email.toLowerCase());
-      const codeHash = await hashCode(code);
-
-      await supabase
-        .from('signup_email_otps')
-        .insert({
-          email_hash: emailHash,
-          code_hash: codeHash,
-          purpose: 'signup',
-          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-        });
-
-      await supabase.functions.invoke('send-verification-code', {
-        body: {
-          email: pendingData.email,
-          username: pendingData.username,
-          code: code,
-        },
-      });
-
-      toast.success("New code sent!");
-    } catch {
-      toast.error("Failed to resend code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (step === 'otp') {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center p-4 border-b">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setStep('form')}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          <h1 className="text-xl font-semibold ml-4">Verify Email</h1>
-        </div>
-
-        <div className="p-6 max-w-md mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl">📧</span>
-            </div>
-            <h2 className="text-xl font-semibold">Check your email</h2>
-            <p className="text-muted-foreground">
-              We've sent a 6-digit code to <span className="font-medium text-foreground">{pendingData?.email}</span>
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="otp">Verification Code</Label>
-            <Input
-              id="otp"
-              type="text"
-              placeholder="Enter 6-digit code"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="h-14 text-center text-2xl tracking-[0.5em] font-mono"
-              maxLength={6}
-            />
-          </div>
-
-          <Button
-            variant="reown"
-            size="lg"
-            className="w-full"
-            onClick={handleVerifyOTP}
-            disabled={loading || otp.length !== 6}
-          >
-            {loading ? "Verifying..." : "Verify & Create Account"}
-          </Button>
-
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Didn't receive the code?
-            </p>
-            <Button
-              variant="link"
-              onClick={handleResendOTP}
-              disabled={loading}
-            >
-              Resend Code
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -508,7 +345,7 @@ const CreateAccount = () => {
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Re-enter your password"
+              placeholder="Confirm your password"
               value={formData.confirmPassword}
               onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
               className="h-12 pr-12"
@@ -523,29 +360,39 @@ const CreateAccount = () => {
               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+            <div className="text-red-500 text-xs flex items-center gap-1">
+              <X className="h-3 w-3" />
+              Passwords do not match
+            </div>
+          )}
+          {formData.confirmPassword && formData.password === formData.confirmPassword && (
+            <div className="text-green-500 text-xs flex items-center gap-1">
+              <Check className="h-3 w-3" />
+              Passwords match
+            </div>
+          )}
         </div>
 
         <Button
           variant="reown"
           size="lg"
           className="w-full"
-          onClick={handleSendOTP}
+          onClick={handleCreateAccount}
           disabled={loading}
         >
-          {loading ? "Sending Code..." : "Continue"}
+          {loading ? "Creating Account..." : "Create Account"}
         </Button>
 
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Button
-              variant="link"
-              className="p-0 h-auto text-primary"
-              onClick={() => navigate("/auth")}
-            >
-              Sign In
-            </Button>
-          </p>
+        <div className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Button
+            variant="link"
+            className="p-0 h-auto"
+            onClick={() => navigate("/auth")}
+          >
+            Sign In
+          </Button>
         </div>
       </div>
     </div>
