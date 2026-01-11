@@ -1,4 +1,5 @@
-import { ArrowLeft, Send, Image as ImageIcon, Video, Check, CheckCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Send, Image as ImageIcon, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +13,8 @@ import { useUserPresence } from "@/hooks/useUserPresence";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { getRandomAvatarEmoji } from "@/utils/randomStats";
+import { PageTransition } from "@/components/PageTransition";
+import { ChatSkeleton } from "@/components/skeletons/ChatSkeleton";
 
 interface Message {
   id: string;
@@ -159,7 +162,6 @@ const Chat = () => {
 
       setMessages(typedMessages);
 
-      // Mark unread messages as read
       const unreadMessages = typedMessages.filter(
         msg => !msg.read_at && msg.sender_id !== profileId
       );
@@ -197,12 +199,10 @@ const Chat = () => {
             };
             
             setMessages(prev => {
-              // Check if message already exists to avoid duplicates
               if (prev.some(m => m.id === typedMsg.id)) return prev;
               return [...prev, typedMsg];
             });
             
-            // Mark as read if from other user
             if (userProfileId && typedMsg.sender_id !== userProfileId) {
               supabase
                 .from('messages')
@@ -211,7 +211,6 @@ const Chat = () => {
                 .then();
             }
           } else if (payload.eventType === 'UPDATE') {
-            // Handle read receipt updates
             const updatedMsg = payload.new as any;
             setMessages(prev => 
               prev.map(m => m.id === updatedMsg.id ? { ...m, read_at: updatedMsg.read_at } : m)
@@ -244,7 +243,6 @@ const Chat = () => {
     setSending(true);
     const messageText = message.trim();
     
-    // Optimistically add message to UI
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage: Message = {
       id: tempId,
@@ -300,7 +298,6 @@ const Chat = () => {
 
       if (error) throw error;
 
-      // Replace optimistic message with real one
       setMessages(prev => 
         prev.map(m => m.id === tempId ? { ...newMessage, message_type: messageType } as Message : m)
       );
@@ -315,9 +312,8 @@ const Chat = () => {
       setTyping(false);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      setMessage(messageText); // Restore message
+      setMessage(messageText);
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -346,174 +342,221 @@ const Chat = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <ChatSkeleton />;
   }
 
   if (!otherUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen p-4">
-        <h2 className="text-xl font-semibold mb-2">Conversation not found</h2>
-        <p className="text-muted-foreground mb-4 text-center">
-          This conversation doesn't exist or you don't have access to it.
-        </p>
-        <Button onClick={() => navigate('/messages')}>Go to Messages</Button>
-      </div>
+      <PageTransition>
+        <div className="flex flex-col items-center justify-center h-screen p-6 bg-gradient-to-br from-background via-background to-primary/5">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center backdrop-blur-xl bg-card/50 rounded-3xl p-8 shadow-2xl border border-border/50"
+          >
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">💬</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Conversation not found</h2>
+            <p className="text-muted-foreground mb-6">
+              This conversation doesn't exist or you don't have access to it.
+            </p>
+            <Button onClick={() => navigate('/messages')} className="rounded-full px-8">
+              Go to Messages
+            </Button>
+          </motion.div>
+        </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/u/${otherUser.username}`)}>
-              <UserPresence userId={otherUser.user_id}>
-                <Avatar className="w-10 h-10 border-2 border-primary/20">
-                  <AvatarImage src={otherUser.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-lg">
-                    {otherUser.avatar_url ? 
-                      otherUser.username?.slice(0, 2).toUpperCase() : 
-                      getRandomAvatarEmoji(otherUser.username || 'user')
-                    }
-                  </AvatarFallback>
-                </Avatar>
-              </UserPresence>
-              <div>
-                <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'User'}</h2>
-                <p className="text-xs text-muted-foreground">
-                  {isOtherUserTyping ? (
-                    <span className="text-primary">typing...</span>
-                  ) : otherUserOnline ? (
-                    <span className="text-green-500">● Online</span>
-                  ) : otherUserLastSeen ? (
-                    `Last seen ${new Date(otherUserLastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  ) : (
-                    `@${otherUser.username || 'unknown'}`
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/30">
-        {messages.length === 0 && (
-          <div className="text-center text-muted-foreground py-8">
-            <p>No messages yet. Start the conversation!</p>
-          </div>
-        )}
-        {messages.map((msg) => {
-          const isMyMessage = userProfileId && msg.sender_id === userProfileId;
-          return (
-            <div key={msg.id} className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] px-4 py-2 rounded-2xl shadow-sm ${
-                isMyMessage 
-                  ? "bg-primary text-primary-foreground rounded-br-sm" 
-                  : "bg-card rounded-bl-sm"
-              }`}>
-                {msg.message_type === 'image' ? (
-                  <img 
-                    src={msg.content || ''} 
-                    alt="Shared image" 
-                    className="rounded-lg max-w-full h-auto max-h-64"
-                  />
-                ) : msg.message_type === 'video' ? (
-                  <video 
-                    src={msg.content || ''} 
-                    controls
-                    className="rounded-lg max-w-full h-auto max-h-64"
-                  />
-                ) : (
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                )}
-                <div className={`flex items-center gap-1 text-[10px] mt-1 ${
-                  isMyMessage ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
-                }`}>
-                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {isMyMessage && (
-                    <span className="ml-1">
-                      {msg.read_at ? (
-                        <CheckCheck className="h-3 w-3 text-blue-400" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
+    <PageTransition className="h-screen">
+      <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
+        {/* Header */}
+        <div className="backdrop-blur-xl bg-background/80 border-b border-border/50 px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate(-1)}
+                className="rounded-full bg-muted/50 hover:bg-muted"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div 
+                className="flex items-center gap-3 cursor-pointer" 
+                onClick={() => navigate(`/u/${otherUser.username}`)}
+              >
+                <UserPresence userId={otherUser.user_id}>
+                  <Avatar className="w-11 h-11 ring-2 ring-primary/20 shadow-md">
+                    <AvatarImage src={otherUser.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-lg">
+                      {otherUser.avatar_url ? 
+                        otherUser.username?.slice(0, 2).toUpperCase() : 
+                        getRandomAvatarEmoji(otherUser.username || 'user')
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                </UserPresence>
+                <div>
+                  <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'User'}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {isOtherUserTyping ? (
+                      <span className="text-primary font-medium">typing...</span>
+                    ) : otherUserOnline ? (
+                      <span className="text-green-500 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Online
+                      </span>
+                    ) : otherUserLastSeen ? (
+                      `Last seen ${new Date(otherUserLastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    ) : (
+                      `@${otherUser.username || 'unknown'}`
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
-          );
-        })}
-        {isOtherUserTyping && (
-          <div className="flex justify-start">
-            <TypingIndicator />
           </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+        </div>
 
-      {/* Input */}
-      <div className="bg-card border-t p-4">
-        {imagePreview && (
-          <div className="mb-3 relative inline-block">
-            <img src={imagePreview} alt="Preview" className="h-20 rounded-lg border" />
-            <Button
-              size="icon"
-              variant="destructive"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-              onClick={() => {
-                setImageFile(null);
-                setImagePreview(null);
-              }}
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {messages.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-12"
             >
-              ×
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">👋</span>
+              </div>
+              <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+            </motion.div>
+          )}
+          {messages.map((msg, index) => {
+            const isMyMessage = userProfileId && msg.sender_id === userProfileId;
+            return (
+              <motion.div 
+                key={msg.id} 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.02 }}
+                className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${
+                  isMyMessage 
+                    ? "bg-primary text-primary-foreground rounded-br-md" 
+                    : "bg-card backdrop-blur-sm rounded-bl-md border border-border/50"
+                }`}>
+                  {msg.message_type === 'image' ? (
+                    <img 
+                      src={msg.content || ''} 
+                      alt="Shared image" 
+                      className="rounded-xl max-w-full h-auto max-h-64"
+                    />
+                  ) : msg.message_type === 'video' ? (
+                    <video 
+                      src={msg.content || ''} 
+                      controls
+                      className="rounded-xl max-w-full h-auto max-h-64"
+                    />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  )}
+                  <div className={`flex items-center gap-1 text-[10px] mt-1.5 ${
+                    isMyMessage ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
+                  }`}>
+                    <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {isMyMessage && (
+                      <span className="ml-1">
+                        {msg.read_at ? (
+                          <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+          {isOtherUserTyping && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-start"
+            >
+              <TypingIndicator />
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="backdrop-blur-xl bg-background/80 border-t border-border/50 p-4">
+          {imagePreview && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-3 relative inline-block"
+            >
+              <img src={imagePreview} alt="Preview" className="h-20 rounded-xl border shadow-lg" />
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg"
+                onClick={() => {
+                  setImageFile(null);
+                  setImagePreview(null);
+                }}
+              >
+                ×
+              </Button>
+            </motion.div>
+          )}
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-shrink-0 rounded-full border-border/50"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Input 
+              value={message} 
+              onChange={handleInputChange} 
+              onKeyPress={handleKeyPress}
+              placeholder="Type a message..." 
+              className="flex-1 rounded-full h-11 bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+            />
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={(!message.trim() && !imageFile) || sending}
+              size="icon"
+              className="flex-shrink-0 rounded-full shadow-lg shadow-primary/25"
+            >
+              {sending ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            className="hidden"
-            onChange={handleImageSelect}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-shrink-0"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-          <Input 
-            value={message} 
-            onChange={handleInputChange} 
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..." 
-            className="flex-1 rounded-full"
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={(!message.trim() && !imageFile) || sending}
-            size="icon"
-            className="flex-shrink-0 rounded-full"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 
