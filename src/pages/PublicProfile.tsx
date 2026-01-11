@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, MapPin, Calendar, Phone, Video, MessageCircle, Heart, Share2 } from "lucide-react";
+import { ArrowLeft, Shield, MapPin, Calendar, Phone, Video, MessageCircle, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { PageTransition, staggerContainer, staggerItem } from "@/components/PageTransition";
+import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import BottomNavigation from "@/components/BottomNavigation";
 
 const PublicProfile = () => {
@@ -27,7 +30,6 @@ const PublicProfile = () => {
   useEffect(() => {
     const resolveProfile = async () => {
       if (username && !profileId) {
-        // Route like /u/username - resolve username to profile ID
         try {
           const { data: resolvedId, error } = await supabase
             .rpc('get_profile_id_by_username', { uname: username });
@@ -52,10 +54,6 @@ const PublicProfile = () => {
       setupConversation();
     }
   }, [actualProfileId]);
-
-  const fetchProfile = async () => {
-    // This is now handled by the usePublicProfile hook
-  };
 
   const fetchProducts = async () => {
     try {
@@ -125,7 +123,6 @@ const PublicProfile = () => {
 
       if (!userProfile) return;
 
-      // Check if conversation exists
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
@@ -135,7 +132,6 @@ const PublicProfile = () => {
       if (existingConv) {
         setConversationId(existingConv.id);
       } else {
-        // Create new conversation
         const { data: newConv, error } = await supabase
           .from('conversations')
           .insert({
@@ -192,248 +188,331 @@ const PublicProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading profile...</p>
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pb-24">
+          <div className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50 px-4 py-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </div>
+          <ProfileSkeleton />
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Profile not found</h2>
-          <p className="text-muted-foreground mb-4">{error || 'The profile you are looking for does not exist.'}</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center backdrop-blur-xl bg-card/50 rounded-3xl p-8 shadow-2xl border border-border/50"
+          >
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">😕</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Profile not found</h2>
+            <p className="text-muted-foreground mb-6">{error || 'The profile you are looking for does not exist.'}</p>
+            <Button onClick={() => navigate(-1)} className="rounded-full px-8">Go Back</Button>
+          </motion.div>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-background border-b px-4 py-3">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Profile Header */}
-      <div className="p-6 text-center">
-        <Avatar className="w-24 h-24 mx-auto mb-4">
-          <AvatarImage src={profile.avatar_url} />
-          <AvatarFallback>
-            {profile.avatar_url ? 
-              (profile.display_name?.slice(0, 2) || profile.username?.slice(0, 2) || 'U') : 
-              (() => {
-                const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
-                const index = profile.username ? profile.username.length % emojis.length : 0;
-                return emojis[index];
-              })()
-            }
-          </AvatarFallback>
-        </Avatar>
-        
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
-          {profile.verified && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 p-0"
-              onClick={() => setShowVerifiedDialog(true)}
-            >
-              <Shield className="h-5 w-5 text-blue-500" />
-            </Button>
-          )}
-        </div>
-        
-        <p className="text-muted-foreground mb-1">@{profile.username}</p>
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-4">
-          <span>⭐ {profile.rating}/5.0</span>
-          {profile.location && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>{profile.location}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            <span>Joined {new Date(profile.created_at).toLocaleDateString()}</span>
-          </div>
-        </div>
-
-        {profile.bio && (
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">{profile.bio}</p>
-        )}
-
-        {/* Stats */}
-        <div className="flex justify-center gap-8 mb-6">
-          <div className="text-center">
-            <div className="text-xl font-bold">{products.length}</div>
-            <div className="text-sm text-muted-foreground">Products</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xl font-bold">{profile.followers_count}</div>
-            <div className="text-sm text-muted-foreground">Followers</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xl font-bold">{profile.following_count}</div>
-            <div className="text-sm text-muted-foreground">Following</div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {user && actualProfileId !== profile.user_id && (
-          <div className="flex gap-3 justify-center">
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
+          <div className="px-4 py-3">
             <Button 
-              onClick={handleFollow}
-              variant={isFollowing ? "outline" : "default"}
-              className="flex-1 max-w-[120px]"
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(-1)}
+              className="rounded-full bg-muted/50 hover:bg-muted"
             >
-              {isFollowing ? "Following" : "Follow"}
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="icon" onClick={async () => {
-              if (conversationId) {
-                navigate(`/chat/${conversationId}`);
-              } else {
-                // Create conversation and navigate
-                try {
-                  const { data: userProfile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .single();
+          </div>
+        </div>
 
-                  if (userProfile && profile) {
-                    const { data: newConv, error } = await supabase
-                      .from('conversations')
-                      .insert({
-                        participant_1: userProfile.id,
-                        participant_2: profile.id
-                      })
-                      .select('id')
-                      .single();
+        {/* Profile Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-6 py-8 text-center"
+        >
+          <div className="relative inline-block mb-4">
+            <Avatar className="w-28 h-28 ring-4 ring-primary/20 shadow-xl">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/20 to-primary/10">
+                {profile.avatar_url ? 
+                  (profile.display_name?.slice(0, 2) || profile.username?.slice(0, 2) || 'U') : 
+                  (() => {
+                    const emojis = ['😊', '🎯', '🌟', '🎨', '🚀', '💎', '🔥', '⚡', '🌈', '🎪'];
+                    const index = profile.username ? profile.username.length % emojis.length : 0;
+                    return emojis[index];
+                  })()
+                }
+              </AvatarFallback>
+            </Avatar>
+            {profile.verified && (
+              <div 
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer"
+                onClick={() => setShowVerifiedDialog(true)}
+              >
+                <Shield className="h-4 w-4 text-white" />
+              </div>
+            )}
+          </div>
+          
+          <h1 className="text-2xl font-bold mb-1">{profile.display_name || profile.username}</h1>
+          <p className="text-muted-foreground mb-3">@{profile.username}</p>
+          
+          <div className="flex items-center justify-center flex-wrap gap-3 text-sm text-muted-foreground mb-4">
+            <Badge variant="secondary" className="rounded-full px-3 py-1 bg-yellow-500/10 text-yellow-600">
+              ⭐ {profile.rating}/5.0
+            </Badge>
+            {profile.location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{profile.location}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>Joined {new Date(profile.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
 
-                    if (!error && newConv) {
-                      navigate(`/chat/${newConv.id}`);
+          {profile.bio && (
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm leading-relaxed">{profile.bio}</p>
+          )}
+
+          {/* Stats */}
+          <div className="flex justify-center gap-6 mb-6">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="text-center p-4 rounded-2xl bg-card/50 backdrop-blur-sm shadow-lg min-w-[80px]"
+            >
+              <div className="text-2xl font-bold">{products.length}</div>
+              <div className="text-xs text-muted-foreground">Products</div>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="text-center p-4 rounded-2xl bg-card/50 backdrop-blur-sm shadow-lg min-w-[80px]"
+            >
+              <div className="text-2xl font-bold">{profile.followers_count}</div>
+              <div className="text-xs text-muted-foreground">Followers</div>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="text-center p-4 rounded-2xl bg-card/50 backdrop-blur-sm shadow-lg min-w-[80px]"
+            >
+              <div className="text-2xl font-bold">{profile.following_count}</div>
+              <div className="text-xs text-muted-foreground">Following</div>
+            </motion.div>
+          </div>
+
+          {/* Action Buttons */}
+          {user && actualProfileId !== profile.user_id && (
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={handleFollow}
+                variant={isFollowing ? "outline" : "default"}
+                className={`rounded-full px-6 ${!isFollowing && 'shadow-lg shadow-primary/25'}`}
+              >
+                {isFollowing ? (
+                  <>
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Following
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Follow
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full"
+                onClick={async () => {
+                  if (conversationId) {
+                    navigate(`/chat/${conversationId}`);
+                  } else {
+                    try {
+                      const { data: userProfile } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .single();
+
+                      if (userProfile && profile) {
+                        const { data: newConv, error } = await supabase
+                          .from('conversations')
+                          .insert({
+                            participant_1: userProfile.id,
+                            participant_2: profile.id
+                          })
+                          .select('id')
+                          .single();
+
+                        if (!error && newConv) {
+                          navigate(`/chat/${newConv.id}`);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Error creating conversation:', error);
                     }
                   }
-                } catch (error) {
-                  console.error('Error creating conversation:', error);
-                }
-              }
-            }}>
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Phone className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Video className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="products" className="px-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="products" className="mt-4">
-          {products.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No products listed yet
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {products.map((product) => (
-                <Card key={product.id} className="cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
-                  <CardContent className="p-0">
-                    <img 
-                      src={product.images?.[0] || "/placeholder.svg"} 
-                      alt={product.title}
-                      className="w-full h-32 object-cover rounded-t-lg"
-                    />
-                    <div className="p-3">
-                      <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.title}</h3>
-                      <p className="text-primary font-bold">${product.price}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                }}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="rounded-full">
+                <Phone className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="rounded-full">
+                <Video className="h-4 w-4" />
+              </Button>
             </div>
           )}
-        </TabsContent>
-        
-        <TabsContent value="reviews" className="mt-4">
-          {reviews.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No reviews yet
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {reviews.map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${review.profiles?.username}`} />
-                        <AvatarFallback>{review.profiles?.username?.slice(0, 2) || 'U'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{review.profiles?.display_name || review.profiles?.username}</span>
-                          <div className="flex">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <span key={i} className={`text-sm ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
-                                ⭐
-                              </span>
-                            ))}
+        </motion.div>
+
+        {/* Tabs */}
+        <div className="px-4">
+          <Tabs defaultValue="products">
+            <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/50 p-1">
+              <TabsTrigger value="products" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Products ({products.length})
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Reviews ({reviews.length})
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="products" className="mt-4">
+              {products.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">📦</span>
+                  </div>
+                  <p>No products listed yet</p>
+                </div>
+              ) : (
+                <motion.div 
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-2 gap-4"
+                >
+                  {products.map((product) => (
+                    <motion.div key={product.id} variants={staggerItem}>
+                      <Card 
+                        className="cursor-pointer overflow-hidden backdrop-blur-sm bg-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" 
+                        onClick={() => navigate(`/product/${product.id}`)}
+                      >
+                        <CardContent className="p-0">
+                          <div className="relative">
+                            <img 
+                              src={product.images?.[0] || "/placeholder.svg"} 
+                              alt={product.title}
+                              className="w-full h-36 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                           </div>
-                        </div>
-                        {review.comment && (
-                          <p className="text-sm text-muted-foreground">{review.comment}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                          <div className="p-3">
+                            <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.title}</h3>
+                            <p className="text-primary font-bold">₹{product.price.toLocaleString()}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="reviews" className="mt-4">
+              {reviews.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">⭐</span>
+                  </div>
+                  <p>No reviews yet</p>
+                </div>
+              ) : (
+                <motion.div 
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-4"
+                >
+                  {reviews.map((review) => (
+                    <motion.div key={review.id} variants={staggerItem}>
+                      <Card className="backdrop-blur-sm bg-card/50 border-0 shadow-lg">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="w-10 h-10 ring-2 ring-primary/10">
+                              <AvatarImage src={review.profiles?.avatar_url} />
+                              <AvatarFallback className="bg-primary/10">
+                                {review.profiles?.username?.slice(0, 2) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm">{review.profiles?.display_name || review.profiles?.username}</span>
+                                <div className="flex">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <span key={i} className={`text-sm ${i < review.rating ? 'text-yellow-400' : 'text-muted'}`}>
+                                      ⭐
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {review.comment && (
+                                <p className="text-sm text-muted-foreground">{review.comment}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
 
-      {/* Verified Badge Dialog */}
-      <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-500" />
-              Verified User
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground">
-            This user has been verified by our team. Verified users have confirmed their identity and meet our trust standards.
-          </p>
-        </DialogContent>
-      </Dialog>
+        {/* Verified Badge Dialog */}
+        <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
+          <DialogContent className="rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                Verified User
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground">
+              This user has been verified by our team. Verified users have confirmed their identity and meet our trust standards.
+            </p>
+          </DialogContent>
+        </Dialog>
 
-      <BottomNavigation />
-    </div>
+        <BottomNavigation />
+      </div>
+    </PageTransition>
   );
 };
 
