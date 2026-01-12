@@ -146,50 +146,52 @@ const Location = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="bg-gradient-to-br from-primary via-primary to-primary-dark px-5 pt-12 pb-6 rounded-b-3xl shadow-lg">
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="bg-white/10 hover:bg-white/20 text-white rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold">Choose Location</h1>
+          <h1 className="text-xl font-bold text-white">Choose Location</h1>
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="p-4">
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search for a location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-11 h-12 bg-white border-0 rounded-2xl shadow-sm"
           />
         </div>
+      </div>
 
+      <div className="p-5">
         {/* Current Location */}
         <Button
           variant="outline"
-          className="w-full justify-start mb-6"
+          className="w-full justify-start h-14 mb-6 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10"
           onClick={getCurrentLocation}
         >
           <Target className="h-5 w-5 mr-3 text-primary" />
-          Use current location
+          <span className="font-medium">Use current location</span>
         </Button>
 
         {/* All Indian Cities */}
         <div>
-          <h3 className="font-semibold mb-3">Indian Cities & States</h3>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <h3 className="font-bold text-foreground mb-3">Indian Cities & States</h3>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
             {filteredLocations.map((location) => (
-              <Card key={location.id} className="cursor-pointer hover:bg-gray-50"
+              <Card key={location.id} className="cursor-pointer hover:shadow-md transition-all border-0 shadow-sm rounded-xl active:scale-[0.98]"
                     onClick={() => handleLocationSelect(location.name)}>
-                <CardContent className="p-3">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{location.name}</span>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MapPin className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="font-medium">{location.name}</span>
                   </div>
                 </CardContent>
               </Card>

@@ -389,6 +389,7 @@ const Reels = () => {
                 key={reel.id}
                 className="group relative bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer"
                 style={{ aspectRatio: '9/16' }}
+                onClick={() => togglePlay(reel.id)}
               >
                 {/* Thumbnail/Video */}
                 <div className="absolute inset-0 bg-black">
@@ -400,12 +401,7 @@ const Reels = () => {
                       className="w-full h-full object-cover"
                       loop
                       playsInline
-                      muted
-                      onMouseEnter={(e) => e.currentTarget.play()}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      }}
+                      muted={mutedReels.has(reel.id)}
                     />
                   ) : (
                     <img
@@ -416,18 +412,22 @@ const Reels = () => {
                   )}
                 </div>
 
-                {/* Play icon overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                  <div className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-                    <Play className="h-8 w-8 text-white fill-white ml-1" />
+                {/* Play/Pause overlay */}
+                <div className="absolute inset-0 flex items-center justify-center transition-opacity bg-black/20">
+                  <div className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {playingReelId === reel.id ? (
+                      <Pause className="h-8 w-8 text-white" />
+                    ) : (
+                      <Play className="h-8 w-8 text-white fill-white ml-1" />
+                    )}
                   </div>
                 </div>
 
                 {/* Gradient overlay */}
-                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
                 {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
                   {reelUploaders[reel.admin_id] && (
                     <div className="flex items-center gap-2 mb-2">
                       <Avatar className="w-8 h-8 ring-2 ring-white/50">
@@ -452,10 +452,27 @@ const Reels = () => {
                   </div>
                 </div>
 
+                {/* Mute/Unmute button */}
+                {reel.video_url && playingReelId === reel.id && (
+                  <button
+                    className="absolute top-3 left-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMute(reel.id);
+                    }}
+                  >
+                    {mutedReels.has(reel.id) ? (
+                      <VolumeX className="h-5 w-5 text-white" />
+                    ) : (
+                      <Volume2 className="h-5 w-5 text-white" />
+                    )}
+                  </button>
+                )}
+
                 {/* Buy button */}
                 {reel.buy_link && (
                   <Button
-                    className="absolute top-3 right-3 bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-3 right-3 bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     onClick={(e) => {
                       e.stopPropagation();
                       window.open(reel.buy_link!, '_blank');

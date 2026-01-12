@@ -26,19 +26,19 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      let emailToUse = identifier;
+      let emailToUse = identifier.trim();
 
       // Check if input is NOT an email (no @ symbol) - treat as username
       if (!identifier.includes("@")) {
-        // Look up email by username
+        // Look up email by username (case-insensitive)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('email')
-          .eq('username', identifier.toLowerCase().trim())
+          .ilike('username', identifier.trim())
           .single();
 
         if (profileError || !profileData?.email) {
-          toast.error("Username not found");
+          toast.error("Username not found. Please try with your email address.");
           setLoading(false);
           return;
         }

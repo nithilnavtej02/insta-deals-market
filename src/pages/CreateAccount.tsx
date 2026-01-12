@@ -139,9 +139,10 @@ const CreateAccount = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            username: formData.username,
+            username: formData.username.toLowerCase().trim(),
             display_name: formData.username,
             phone: phone,
+            email: formData.email, // Store email in metadata for profile creation
           }
         }
       });
@@ -158,6 +159,24 @@ const CreateAccount = () => {
       if (!authData.user) {
         toast.error("Failed to create account");
         return;
+      }
+
+      // Wait a moment for profile to be created by trigger
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update profile with email and username if not already set
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          email: formData.email,
+          username: formData.username.toLowerCase().trim(),
+          display_name: formData.username,
+          phone: phone
+        })
+        .eq('user_id', authData.user.id);
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
       }
 
       // Auto sign-in the user

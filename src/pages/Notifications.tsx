@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowLeft, Bell, CheckCheck, Trash2, Package, Heart, MessageCircle, UserPlus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,16 +7,27 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDistanceToNow } from "date-fns";
+import LoadingLogo from "@/components/LoadingLogo";
 
 const Notifications = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
 
-  if (!user) {
-    navigate("/auth");
-    return null;
+  // Redirect to auth if not logged in - using useEffect to avoid render issues
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingLogo size="md" text="Loading..." />
+      </div>
+    );
   }
 
   const getNotificationIcon = (type: string) => {
@@ -59,10 +71,7 @@ const Notifications = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground">Loading notifications...</p>
-        </div>
+        <LoadingLogo size="md" text="Loading notifications..." />
       </div>
     );
   }

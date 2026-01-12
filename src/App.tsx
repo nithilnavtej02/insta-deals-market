@@ -1,10 +1,13 @@
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/useAuth";
+import { AnimatePresence, motion } from "framer-motion";
+import SplashScreen from "@/components/SplashScreen";
+import LoadingLogo from "@/components/LoadingLogo";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -43,14 +46,30 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { user, loading } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Show splash screen on initial app load
+  useEffect(() => {
+    // Check if user has seen splash this session
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (hasSeenSplash) {
+      setShowSplash(false);
+    }
+  }, []);
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('hasSeenSplash', 'true');
+    setShowSplash(false);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} duration={2500} />;
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+        <LoadingLogo size="lg" text="Loading..." />
       </div>
     );
   }

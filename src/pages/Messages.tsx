@@ -100,11 +100,10 @@ const Messages = () => {
           
           <div className="space-y-3">
             {loading ? (
-              <div className="py-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 animate-pulse">
+              <div className="py-12 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto animate-pulse">
                   <MessageSquare className="h-6 w-6 text-primary" />
                 </div>
-                <p className="text-muted-foreground">Loading conversations...</p>
               </div>
             ) : filteredConversations.length === 0 ? (
               <div className="py-12 text-center">
