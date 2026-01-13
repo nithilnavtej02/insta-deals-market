@@ -40,7 +40,11 @@ export interface Product {
 
 // Simple cache for products
 let productsCache: { data: Product[] | null; timestamp: number } = { data: null, timestamp: 0 };
-const CACHE_DURATION = 60000; // 1 minute cache
+const CACHE_DURATION = 300000; // 5 minute cache for better performance
+
+// Cache for individual products
+const productDetailCache: Map<string, { data: Product; timestamp: number }> = new Map();
+const DETAIL_CACHE_DURATION = 120000; // 2 minute cache for product details
 
 export function useProducts() {
   const { user } = useAuth();
@@ -98,6 +102,12 @@ export function useProducts() {
   const fetchProductById = async (id: string): Promise<Product | null> => {
     if (!id) return null;
     
+    // Check cache first
+    const cached = productDetailCache.get(id);
+    if (cached && Date.now() - cached.timestamp < DETAIL_CACHE_DURATION) {
+      return cached.data;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('products')
@@ -129,7 +139,14 @@ export function useProducts() {
         .maybeSingle();
 
       if (error) throw error;
-      return (data as unknown) as Product;
+      const product = (data as unknown) as Product;
+      
+      // Cache the result
+      if (product) {
+        productDetailCache.set(id, { data: product, timestamp: Date.now() });
+      }
+      
+      return product;
     } catch (error) {
       console.error('Error fetching product:', error);
       return null;

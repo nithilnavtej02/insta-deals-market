@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Eye, EyeOff, Check, X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronLeft, Eye, EyeOff, Check, X, ShoppingBag, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { validatePassword, sanitizeInput } from "@/utils/security";
@@ -23,6 +24,7 @@ const CreateAccount = () => {
     password: "",
     confirmPassword: ""
   });
+
   const [validation, setValidation] = useState<{
     username: { checking: boolean; available: boolean | null };
     email: { checking: boolean; available: boolean | null };
@@ -132,7 +134,6 @@ const CreateAccount = () => {
     try {
       const phone = formData.phone ? formData.countryCode + formData.phone : null;
 
-      // Create user directly with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -142,7 +143,7 @@ const CreateAccount = () => {
             username: formData.username.toLowerCase().trim(),
             display_name: formData.username,
             phone: phone,
-            email: formData.email, // Store email in metadata for profile creation
+            email: formData.email,
           }
         }
       });
@@ -161,10 +162,8 @@ const CreateAccount = () => {
         return;
       }
 
-      // Wait a moment for profile to be created by trigger
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Update profile with email and username if not already set
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
@@ -179,14 +178,12 @@ const CreateAccount = () => {
         console.error('Profile update error:', updateError);
       }
 
-      // Auto sign-in the user
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
       if (signInError) {
-        // If auto-login fails, redirect to auth page
         toast.success("Account created! Please sign in.");
         navigate("/auth");
         return;
@@ -202,217 +199,256 @@ const CreateAccount = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex items-center p-4 border-b">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-primary-foreground/20 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+        <motion.div 
+          className="absolute bottom-40 left-20 w-14 h-14 bg-white/10 rounded-full backdrop-blur-sm"
+          animate={{ y: [0, 15, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center p-4">
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           onClick={() => navigate("/")}
+          className="text-white hover:bg-white/10 rounded-full"
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-semibold ml-4">Create Account</h1>
       </div>
 
-      <div className="p-6 max-w-md mx-auto space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="username">Username * (minimum 3 characters)</Label>
-          <div className="relative">
-            <Input
-              id="username"
-              type="text"
-              placeholder="Choose a unique username"
-              value={formData.username}
-              onChange={(e) => handleInputChange("username", e.target.value)}
-              className="h-12 pr-12"
-              minLength={3}
-            />
-            {formData.username && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {validation.username.checking ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                ) : validation.username.available === true && formData.username.length >= 3 ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : validation.username.available === false || formData.username.length < 3 ? (
-                  <X className="h-4 w-4 text-red-500" />
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email">Email *</Label>
-          <div className="relative">
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email address"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              className="h-12 pr-12"
-              required
-            />
-            {formData.email && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {validation.email.checking ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                ) : validation.email.available === true ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : validation.email.available === false ? (
-                  <X className="h-4 w-4 text-red-500" />
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number (Optional)</Label>
-          <div className="flex gap-2">
-            <select
-              value={formData.countryCode}
-              onChange={(e) => handleInputChange("countryCode", e.target.value)}
-              className="h-12 px-3 rounded-md border bg-background"
-            >
-              <option value="+1">🇺🇸 +1</option>
-              <option value="+44">🇬🇧 +44</option>
-              <option value="+91">🇮🇳 +91</option>
-              <option value="+86">🇨🇳 +86</option>
-              <option value="+81">🇯🇵 +81</option>
-              <option value="+49">🇩🇪 +49</option>
-              <option value="+33">🇫🇷 +33</option>
-              <option value="+61">🇦🇺 +61</option>
-              <option value="+55">🇧🇷 +55</option>
-              <option value="+7">🇷🇺 +7</option>
-              <option value="+52">🇲🇽 +52</option>
-              <option value="+34">🇪🇸 +34</option>
-              <option value="+39">🇮🇹 +39</option>
-              <option value="+31">🇳🇱 +31</option>
-              <option value="+46">🇸🇪 +46</option>
-              <option value="+47">🇳🇴 +47</option>
-              <option value="+45">🇩🇰 +45</option>
-              <option value="+41">🇨🇭 +41</option>
-              <option value="+32">🇧🇪 +32</option>
-              <option value="+43">🇦🇹 +43</option>
-              <option value="+82">🇰🇷 +82</option>
-              <option value="+65">🇸🇬 +65</option>
-              <option value="+60">🇲🇾 +60</option>
-              <option value="+63">🇵🇭 +63</option>
-              <option value="+66">🇹🇭 +66</option>
-              <option value="+84">🇻🇳 +84</option>
-              <option value="+62">🇮🇩 +62</option>
-              <option value="+880">🇧🇩 +880</option>
-              <option value="+92">🇵🇰 +92</option>
-              <option value="+64">🇳🇿 +64</option>
-            </select>
-            <div className="relative flex-1">
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone number (optional)"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className="h-12"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password">Password *</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              className="h-12 pr-12"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
-          {formData.password && (
-            <div className="text-xs space-y-1">
-              {validatePassword(formData.password).errors.map((error, index) => (
-                <div key={index} className="text-red-500 flex items-center gap-1">
-                  <X className="h-3 w-3" />
-                  {error}
-                </div>
-              ))}
-              {validatePassword(formData.password).isValid && (
-                <div className="text-green-500 flex items-center gap-1">
-                  <Check className="h-3 w-3" />
-                  Password meets security requirements
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password *</Label>
-          <div className="relative">
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-              className="h-12 pr-12"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
-          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-            <div className="text-red-500 text-xs flex items-center gap-1">
-              <X className="h-3 w-3" />
-              Passwords do not match
-            </div>
-          )}
-          {formData.confirmPassword && formData.password === formData.confirmPassword && (
-            <div className="text-green-500 text-xs flex items-center gap-1">
-              <Check className="h-3 w-3" />
-              Passwords match
-            </div>
-          )}
-        </div>
-
-        <Button
-          variant="reown"
-          size="lg"
-          className="w-full"
-          onClick={handleCreateAccount}
-          disabled={loading}
+      <div className="relative z-10 px-6 pt-4 pb-12">
+        {/* Logo */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
         >
-          {loading ? "Creating Account..." : "Create Account"}
-        </Button>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-xl mb-3 shadow-xl border border-white/20">
+            <ShoppingBag className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-1">Create Account</h1>
+          <p className="text-white/70 text-sm">Join ReOwn marketplace today</p>
+        </motion.div>
 
-        <div className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Button
-            variant="link"
-            className="p-0 h-auto"
-            onClick={() => navigate("/auth")}
-          >
-            Sign In
-          </Button>
-        </div>
+        {/* Form Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="max-w-md mx-auto backdrop-blur-xl bg-white/95 border-0 shadow-2xl rounded-3xl overflow-hidden">
+            <CardContent className="p-6 space-y-4">
+              {/* Username */}
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm font-medium">Username *</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a unique username"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    className="h-12 pr-12 rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+                    minLength={3}
+                  />
+                  {formData.username && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {validation.username.checking ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                      ) : validation.username.available === true && formData.username.length >= 3 ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : validation.username.available === false || formData.username.length < 3 ? (
+                        <X className="h-4 w-4 text-red-500" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className="h-12 pr-12 rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+                  />
+                  {formData.email && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {validation.email.checking ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                      ) : validation.email.available === true ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : validation.email.available === false ? (
+                        <X className="h-4 w-4 text-red-500" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium">Phone Number (Optional)</Label>
+                <div className="flex gap-2">
+                  <select
+                    value={formData.countryCode}
+                    onChange={(e) => handleInputChange("countryCode", e.target.value)}
+                    className="h-12 px-3 rounded-xl border-0 bg-muted/50 text-sm"
+                  >
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+91">🇮🇳 +91</option>
+                    <option value="+86">🇨🇳 +86</option>
+                    <option value="+81">🇯🇵 +81</option>
+                  </select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Phone number"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    className="h-12 flex-1 rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    className="h-12 pr-12 rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+                {formData.password && (
+                  <div className="text-xs space-y-1">
+                    {validatePassword(formData.password).errors.map((error, index) => (
+                      <div key={index} className="text-red-500 flex items-center gap-1">
+                        <X className="h-3 w-3" />
+                        {error}
+                      </div>
+                    ))}
+                    {validatePassword(formData.password).isValid && (
+                      <div className="text-green-500 flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        Password is strong
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    className="h-12 pr-12 rounded-xl bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                  <div className="text-red-500 text-xs flex items-center gap-1">
+                    <X className="h-3 w-3" />
+                    Passwords do not match
+                  </div>
+                )}
+                {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                  <div className="text-green-500 text-xs flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Passwords match
+                  </div>
+                )}
+              </div>
+
+              <Button
+                size="lg"
+                className="w-full h-12 rounded-xl font-semibold text-base mt-2"
+                onClick={handleCreateAccount}
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating Account...
+                  </div>
+                ) : (
+                  "Create Account"
+                )}
+              </Button>
+
+              <div className="text-center pt-2">
+                <p className="text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-primary font-semibold"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Sign In
+                  </Button>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Features */}
+        <motion.div 
+          className="flex items-center justify-center gap-4 mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="flex items-center gap-2 text-white/60 text-xs">
+            <Sparkles className="h-4 w-4" />
+            <span>Free to Join</span>
+          </div>
+          <div className="w-1 h-1 rounded-full bg-white/40" />
+          <div className="flex items-center gap-2 text-white/60 text-xs">
+            <Sparkles className="h-4 w-4" />
+            <span>Secure</span>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
