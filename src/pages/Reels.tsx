@@ -348,10 +348,129 @@ const Reels = () => {
     );
   }
 
-  // Desktop View - Grid Layout
+  // Desktop View - Instagram-like scrollable fullscreen
+  const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
+
+  // When a reel is selected, show fullscreen scrollable view
+  if (selectedReelIndex !== null) {
+    return (
+      <div className="h-screen bg-black overflow-hidden">
+        {/* Close button */}
+        <button
+          className="fixed top-6 left-6 z-50 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors"
+          onClick={() => {
+            // Pause current video
+            Object.values(videoRefs.current).forEach(v => v?.pause());
+            setPlayingReelId(null);
+            setSelectedReelIndex(null);
+          }}
+        >
+          <X className="h-6 w-6 text-white" />
+        </button>
+
+        {/* Scrollable reels container */}
+        <div className="overflow-y-scroll snap-y snap-mandatory h-full" style={{ scrollBehavior: 'smooth' }}>
+          {backendReels.map((reel, index) => (
+            <div 
+              key={reel.id} 
+              className="relative snap-start h-screen w-full flex items-center justify-center"
+            >
+              <div className="relative h-full w-full max-w-[500px] mx-auto">
+                {/* Video/Image */}
+                <div className="absolute inset-0 bg-black flex items-center justify-center">
+                  {reel.video_url ? (
+                    <video
+                      ref={(el) => (videoRefs.current[reel.id] = el)}
+                      src={reel.video_url}
+                      poster={reel.thumbnail_url}
+                      className="w-full h-full object-contain"
+                      loop
+                      playsInline
+                      muted={mutedReels.has(reel.id)}
+                      onClick={() => togglePlay(reel.id)}
+                      autoPlay={index === selectedReelIndex}
+                    />
+                  ) : (
+                    <img src={reel.thumbnail_url} alt={reel.title} className="w-full h-full object-contain" />
+                  )}
+                </div>
+
+                {/* Play/Pause Overlay */}
+                {playingReelId !== reel.id && reel.video_url && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 cursor-pointer" onClick={() => togglePlay(reel.id)}>
+                    <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                      <Play className="h-10 w-10 text-white fill-white ml-1" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Buy Button */}
+                {reel.buy_link && (
+                  <Button
+                    className="absolute top-6 right-6 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full flex items-center gap-2 shadow-xl z-20"
+                    onClick={() => window.open(reel.buy_link!, '_blank')}
+                  >
+                    <ShoppingBag className="h-5 w-5" />
+                    <span className="font-semibold">Buy Now</span>
+                  </Button>
+                )}
+
+                {/* Bottom Gradient */}
+                <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+                {/* Content Info */}
+                <div className="absolute bottom-8 left-6 right-24 z-10">
+                  {reelUploaders[reel.admin_id] && (
+                    <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${reelUploaders[reel.admin_id].user_id}`); }}>
+                      <Avatar className="w-12 h-12 ring-2 ring-white/50">
+                        <AvatarImage src={reelUploaders[reel.admin_id].avatar_url} />
+                        <AvatarFallback className="bg-primary text-white">{reelUploaders[reel.admin_id].username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <p className="text-white font-semibold">@{reelUploaders[reel.admin_id].username || 'Unknown'}</p>
+                    </div>
+                  )}
+                  <h3 className="text-xl font-bold text-white mb-2">{reel.title}</h3>
+                  <p className="text-white/80 line-clamp-2">{reel.description}</p>
+                </div>
+
+                {/* Action Buttons - Right Side */}
+                <div className="absolute right-6 bottom-32 flex flex-col items-center gap-5 z-20">
+                  <button className="flex flex-col items-center gap-1" onClick={() => toggleLike(reel.id)}>
+                    <div className={cn("w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md", isLiked(reel.id) ? "bg-red-500/30" : "bg-white/20")}>
+                      <Heart className={cn("h-7 w-7", isLiked(reel.id) ? "fill-red-500 text-red-500" : "text-white")} />
+                    </div>
+                    <span className="text-white text-sm font-semibold">{formatNumber(reel.likes || 0)}</span>
+                  </button>
+                  <button className="flex flex-col items-center gap-1" onClick={() => navigate(`/reel/${reel.id}/comments`)}>
+                    <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <MessageCircle className="h-7 w-7 text-white" />
+                    </div>
+                    <span className="text-white text-sm font-semibold">{formatNumber(reel.comments || 0)}</span>
+                  </button>
+                  <button className="flex flex-col items-center gap-1" onClick={() => toggleSave(reel.id)}>
+                    <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Bookmark className={cn("h-7 w-7 text-white", isSaved(reel.id) && "fill-white")} />
+                    </div>
+                  </button>
+                  {reel.video_url && (
+                    <button className="flex flex-col items-center gap-1" onClick={() => toggleMute(reel.id)}>
+                      <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                        {mutedReels.has(reel.id) ? <VolumeX className="h-7 w-7 text-white" /> : <Volume2 className="h-7 w-7 text-white" />}
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Grid View
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
-      {/* Header */}
       <div className="bg-gradient-to-r from-primary via-primary to-primary-dark">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center gap-3">
@@ -384,13 +503,12 @@ const Reels = () => {
           </div>
         ) : (
           <div className="grid grid-cols-3 lg:grid-cols-4 gap-6">
-            {backendReels.map((reel) => (
+            {backendReels.map((reel, index) => (
               <div 
                 key={reel.id}
                 className="group relative bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer"
                 style={{ aspectRatio: '9/16' }}
-                onClick={() => togglePlay(reel.id)}
-              >
+                onClick={() => setSelectedReelIndex(index)}
                 {/* Thumbnail/Video */}
                 <div className="absolute inset-0 bg-black">
                   {reel.video_url ? (

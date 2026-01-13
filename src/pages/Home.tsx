@@ -302,7 +302,7 @@ const Home = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 bg-white/10 hover:bg-white/20 text-white rounded-full"
+              className="h-10 w-10 bg-white text-primary hover:bg-white/90 rounded-full shadow-md"
               onClick={() => navigate("/notifications")}
             >
               <Bell className="h-5 w-5" />
