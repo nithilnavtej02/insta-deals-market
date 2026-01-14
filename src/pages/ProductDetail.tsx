@@ -17,6 +17,8 @@ import ShareDialog from "@/components/ShareDialog";
 import { formatLocation } from "@/utils/locationFormat";
 import { ReviewCard } from "@/components/ReviewCard";
 import { generateRandomViews, generateRandomLikes, formatNumber, getRandomAvatarEmoji } from "@/utils/randomStats";
+import ProductDetailSkeleton from "@/components/skeletons/ProductDetailSkeleton";
+
 const ProductDetail = () => {
   const navigate = useNavigate();
   const {
@@ -147,12 +149,7 @@ const ProductDetail = () => {
     }
   };
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading...</p>
-        </div>
-      </div>;
+    return <ProductDetailSkeleton />;
   }
   if (error || !product) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
