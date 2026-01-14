@@ -509,6 +509,7 @@ const Reels = () => {
                 className="group relative bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer"
                 style={{ aspectRatio: '9/16' }}
                 onClick={() => setSelectedReelIndex(index)}
+              >
                 {/* Thumbnail/Video */}
                 <div className="absolute inset-0 bg-black">
                   {reel.video_url ? (
