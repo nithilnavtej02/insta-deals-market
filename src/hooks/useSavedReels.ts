@@ -8,13 +8,6 @@ export interface SavedReel {
   user_id: string;
   reel_id: string;
   created_at: string;
-  reels?: {
-    title: string;
-    thumbnail_url: string;
-    likes: number;
-    comments: number;
-    views: number;
-  };
 }
 
 export function useSavedReels() {
@@ -40,23 +33,15 @@ export function useSavedReels() {
 
       if (!profile) return;
 
+      // Simple query without FK join to avoid relationship error
       const { data, error } = await supabase
         .from('saved_reels')
-        .select(`
-          *,
-          reels!saved_reels_reel_id_fkey (
-            title,
-            thumbnail_url,
-            likes,
-            comments,
-            views
-          )
-        `)
+        .select('*')
         .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSavedReels((data as unknown) as SavedReel[] || []);
+      setSavedReels(data || []);
     } catch (error) {
       console.error('Error fetching saved reels:', error);
     } finally {

@@ -401,7 +401,7 @@ const Chat = () => {
                   </Avatar>
                 </UserPresence>
                 <div>
-                  <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'User'}</h2>
+                  <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'Unknown User'}</h2>
                   <p className="text-xs text-muted-foreground">
                     {isOtherUserTyping ? (
                       <span className="text-primary font-medium">typing...</span>
