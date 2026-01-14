@@ -1,11 +1,150 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, ShoppingBag, Users, ArrowRight } from "lucide-react";
+import { Sparkles, ShoppingBag, Users, ArrowRight, Shield } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
+  // Mobile View - Optimized for smaller screens
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-primary-foreground/20 flex flex-col text-white relative overflow-hidden">
+        {/* Background decorations - simpler for mobile */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-5 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-32 right-5 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
+          
+          {/* Floating elements - smaller for mobile */}
+          <motion.div 
+            className="absolute top-20 right-8 w-12 h-12 bg-white/10 rounded-xl backdrop-blur-sm"
+            animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute bottom-48 left-8 w-10 h-10 bg-white/10 rounded-full backdrop-blur-sm"
+            animate={{ y: [0, 15, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        {/* Main Content - Centered vertically */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
+          {/* Logo/Brand */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="mb-6"
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-xl shadow-2xl border border-white/20">
+              <ShoppingBag className="h-10 w-10 text-white" />
+            </div>
+          </motion.div>
+          
+          <motion.h1 
+            className="text-5xl font-bold mb-2 tracking-tight text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Re<span className="text-white/80">O</span>wn
+          </motion.h1>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="text-center"
+          >
+            <p className="text-base font-light tracking-[0.25em] mb-2 text-white/80">MARKETPLACE</p>
+            <p className="text-sm font-medium text-white/90">Buy, Sell, Connect</p>
+          </motion.div>
+          
+          {/* Features - Stacked for mobile */}
+          <motion.div 
+            className="flex flex-col gap-3 mt-8 w-full max-w-xs"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          >
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Pre-owned Items</p>
+                <p className="text-xs text-white/60">Quality second-hand goods</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Trusted Sellers</p>
+                <p className="text-xs text-white/60">Verified community members</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Great Deals</p>
+                <p className="text-xs text-white/60">Save money every day</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Buttons - Fixed at bottom */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+          className="px-6 pb-8 space-y-3 relative z-10"
+        >
+          <Button 
+            size="lg" 
+            className="w-full text-base h-14 bg-white text-primary hover:bg-white/90 rounded-2xl font-semibold shadow-xl shadow-black/10 group"
+            onClick={() => navigate("/create-account")}
+          >
+            Get Started
+            <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={() => navigate("/auth")} 
+            className="w-full text-base h-14 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white rounded-2xl font-semibold backdrop-blur-sm"
+          >
+            Sign In
+          </Button>
+          
+          <p className="text-center text-xs text-white/50 pt-2 flex items-center justify-center gap-1">
+            <Shield className="h-3 w-3" />
+            Secure & private marketplace
+          </p>
+        </motion.div>
+
+        {/* Bottom indicator */}
+        <motion.div 
+          className="pb-4 flex justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.6 }}
+        >
+          <div className="w-28 h-1 bg-white/30 rounded-full" />
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Desktop View
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-primary-foreground/20 flex flex-col items-center justify-center text-white px-6 relative overflow-hidden">
       {/* Background decorations */}

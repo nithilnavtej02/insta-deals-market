@@ -136,7 +136,7 @@ const Messages = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-foreground truncate">
-                          {conversation.profiles?.display_name || conversation.profiles?.username || 'User'}
+                          {conversation.profiles?.display_name || conversation.profiles?.username || 'Unknown User'}
                         </h3>
                         <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
                           {formatMessageDate(conversation.updated_at)}
@@ -277,7 +277,7 @@ const Messages = () => {
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                                    {conversation.profiles?.display_name || conversation.profiles?.username || 'User'}
+                                    {conversation.profiles?.display_name || conversation.profiles?.username || 'Unknown User'}
                                   </h3>
                                   <span className="text-sm text-primary font-medium">
                                     @{conversation.profiles?.username || 'unknown'}
