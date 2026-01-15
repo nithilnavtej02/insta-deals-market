@@ -4,12 +4,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useSavedReels } from "@/hooks/useSavedReels";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useReels } from "@/hooks/useReels";
 import BottomNavigation from "@/components/BottomNavigation";
 
 const Saved = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { savedReels, loading } = useSavedReels();
+  const { savedReels, loading: savedLoading } = useSavedReels();
+  const { reels, loading: reelsLoading } = useReels();
+
+  const loading = savedLoading || reelsLoading;
+
+  // Get reel details for each saved reel
+  const getReelDetails = (reelId: string) => {
+    return reels.find(r => r.id === reelId);
+  };
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -81,36 +90,41 @@ const Saved = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {savedReels.map((savedReel) => (
-                <Card 
-                  key={savedReel.id}
-                  className="border-0 shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden cursor-pointer"
-                  onClick={() => navigate(`/reels?id=${savedReel.reel_id}`)}
-                >
-                  <CardContent className="p-0">
-                    <div className="relative aspect-[9/16]">
-                      <img
-                        src={savedReel.reels?.thumbnail_url || "/placeholder.svg"}
-                        alt={savedReel.reels?.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <Play className="h-5 w-5 text-white fill-white" />
+              {savedReels.map((savedReel) => {
+                const reelDetails = getReelDetails(savedReel.reel_id);
+                if (!reelDetails) return null;
+                
+                return (
+                  <Card 
+                    key={savedReel.id}
+                    className="border-0 shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/reels?id=${savedReel.reel_id}`)}
+                  >
+                    <CardContent className="p-0">
+                      <div className="relative aspect-[9/16]">
+                        <img
+                          src={reelDetails.thumbnail_url || "/placeholder.svg"}
+                          alt={reelDetails.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <Play className="h-5 w-5 text-white fill-white" />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <h3 className="text-white text-xs font-semibold line-clamp-2">{reelDetails.title}</h3>
+                          <div className="flex justify-between text-[10px] text-white/80 mt-1">
+                            <span>{formatNumber(reelDetails.views || 0)} views</span>
+                            <span>{formatNumber(reelDetails.likes || 0)} likes</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <h3 className="text-white text-xs font-semibold line-clamp-2">{savedReel.reels?.title}</h3>
-                        <div className="flex justify-between text-[10px] text-white/80 mt-1">
-                          <span>{formatNumber(savedReel.reels?.views || 0)} views</span>
-                          <span>{formatNumber(savedReel.reels?.likes || 0)} likes</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -170,36 +184,41 @@ const Saved = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {savedReels.map((savedReel) => (
-              <Card 
-                key={savedReel.id}
-                className="border-0 shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
-                onClick={() => navigate(`/reels?id=${savedReel.reel_id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative aspect-[9/16]">
-                    <img
-                      src={savedReel.reels?.thumbnail_url || "/placeholder.svg"}
-                      alt={savedReel.reels?.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <Play className="h-7 w-7 text-white fill-white" />
+            {savedReels.map((savedReel) => {
+              const reelDetails = getReelDetails(savedReel.reel_id);
+              if (!reelDetails) return null;
+              
+              return (
+                <Card 
+                  key={savedReel.id}
+                  className="border-0 shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+                  onClick={() => navigate(`/reels?id=${savedReel.reel_id}`)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative aspect-[9/16]">
+                      <img
+                        src={reelDetails.thumbnail_url || "/placeholder.svg"}
+                        alt={reelDetails.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                          <Play className="h-7 w-7 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-white text-sm font-semibold line-clamp-2">{reelDetails.title}</h3>
+                        <div className="flex justify-between text-xs text-white/80 mt-1">
+                          <span>{formatNumber(reelDetails.views || 0)} views</span>
+                          <span>{formatNumber(reelDetails.likes || 0)} likes</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <h3 className="text-white text-sm font-semibold line-clamp-2">{savedReel.reels?.title}</h3>
-                      <div className="flex justify-between text-xs text-white/80 mt-1">
-                        <span>{formatNumber(savedReel.reels?.views || 0)} views</span>
-                        <span>{formatNumber(savedReel.reels?.likes || 0)} likes</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

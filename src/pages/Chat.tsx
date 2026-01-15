@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Image as ImageIcon, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Check, CheckCheck, MoreVertical, Phone, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { getRandomAvatarEmoji } from "@/utils/randomStats";
 import { PageTransition } from "@/components/PageTransition";
 import { ChatSkeleton } from "@/components/skeletons/ChatSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   id: string;
@@ -41,6 +42,7 @@ const Chat = () => {
   const { id: conversationId } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
@@ -341,6 +343,32 @@ const Chat = () => {
     }
   };
 
+  const formatMessageTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDateSeparator = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    return date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  };
+
+  const shouldShowDateSeparator = (index: number) => {
+    if (index === 0) return true;
+    const currentDate = new Date(messages[index].created_at).toDateString();
+    const prevDate = new Date(messages[index - 1].created_at).toDateString();
+    return currentDate !== prevDate;
+  };
+
   if (loading) {
     return <ChatSkeleton />;
   }
@@ -354,14 +382,14 @@ const Chat = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center backdrop-blur-xl bg-card/50 rounded-3xl p-8 shadow-2xl border border-border/50"
           >
-            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">💬</span>
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">💬</span>
             </div>
-            <h2 className="text-xl font-bold mb-2">Conversation not found</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-2xl font-bold mb-3">Conversation not found</h2>
+            <p className="text-muted-foreground mb-8 max-w-sm">
               This conversation doesn't exist or you don't have access to it.
             </p>
-            <Button onClick={() => navigate('/messages')} className="rounded-full px-8">
+            <Button onClick={() => navigate('/messages')} className="rounded-full px-8 shadow-lg shadow-primary/25">
               Go to Messages
             </Button>
           </motion.div>
@@ -372,27 +400,37 @@ const Chat = () => {
 
   return (
     <PageTransition className="h-screen">
-      <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
+      <div className={`flex flex-col h-full ${isMobile ? 'bg-background' : 'bg-gradient-to-br from-background via-background to-primary/5'}`}>
         {/* Header */}
-        <div className="backdrop-blur-xl bg-background/80 border-b border-border/50 px-4 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={`backdrop-blur-xl border-b border-border/50 shadow-sm ${
+            isMobile 
+              ? 'bg-background/95 px-3 py-2.5' 
+              : 'bg-card/80 px-6 py-4'
+          }`}
+        >
+          <div className={`flex items-center justify-between ${!isMobile && 'max-w-4xl mx-auto'}`}>
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => navigate(-1)}
-                className="rounded-full bg-muted/50 hover:bg-muted"
+                className={`rounded-full ${isMobile ? 'h-9 w-9' : 'h-10 w-10 bg-muted/50 hover:bg-muted'}`}
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className={isMobile ? "h-5 w-5" : "h-5 w-5"} />
               </Button>
               <div 
-                className="flex items-center gap-3 cursor-pointer" 
+                className="flex items-center gap-3 cursor-pointer group" 
                 onClick={() => navigate(`/u/${otherUser.username}`)}
               >
                 <UserPresence userId={otherUser.user_id}>
-                  <Avatar className="w-11 h-11 ring-2 ring-primary/20 shadow-md">
+                  <Avatar className={`ring-2 ring-primary/20 shadow-md transition-transform group-hover:scale-105 ${
+                    isMobile ? 'w-10 h-10' : 'w-12 h-12'
+                  }`}>
                     <AvatarImage src={otherUser.avatar_url || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-lg">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/30 to-primary/10 text-primary font-semibold">
                       {otherUser.avatar_url ? 
                         otherUser.username?.slice(0, 2).toUpperCase() : 
                         getRandomAvatarEmoji(otherUser.username || 'user')
@@ -400,18 +438,22 @@ const Chat = () => {
                     </AvatarFallback>
                   </Avatar>
                 </UserPresence>
-                <div>
-                  <h2 className="font-semibold text-sm">{otherUser.display_name || otherUser.username || 'Unknown User'}</h2>
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex-1 min-w-0">
+                  <h2 className={`font-semibold truncate group-hover:text-primary transition-colors ${
+                    isMobile ? 'text-sm' : 'text-base'
+                  }`}>
+                    {otherUser.display_name || otherUser.username || 'Unknown User'}
+                  </h2>
+                  <p className={`text-muted-foreground truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {isOtherUserTyping ? (
-                      <span className="text-primary font-medium">typing...</span>
+                      <span className="text-primary font-medium animate-pulse">typing...</span>
                     ) : otherUserOnline ? (
-                      <span className="text-green-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        Online
+                      <span className="text-green-500 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        Active now
                       </span>
                     ) : otherUserLastSeen ? (
-                      `Last seen ${new Date(otherUserLastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      `Active ${new Date(otherUserLastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                     ) : (
                       `@${otherUser.username || 'unknown'}`
                     )}
@@ -419,142 +461,200 @@ const Chat = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.length === 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-12"
-            >
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">👋</span>
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
+                  <Phone className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
+                  <Video className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
               </div>
-              <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
-            </motion.div>
-          )}
-          {messages.map((msg, index) => {
-            const isMyMessage = userProfileId && msg.sender_id === userProfileId;
-            return (
-              <motion.div 
-                key={msg.id} 
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: index * 0.02 }}
-                className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}
-              >
-                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${
-                  isMyMessage 
-                    ? "bg-primary text-primary-foreground rounded-br-md" 
-                    : "bg-card backdrop-blur-sm rounded-bl-md border border-border/50"
-                }`}>
-                  {msg.message_type === 'image' ? (
-                    <img 
-                      src={msg.content || ''} 
-                      alt="Shared image" 
-                      className="rounded-xl max-w-full h-auto max-h-64"
-                    />
-                  ) : msg.message_type === 'video' ? (
-                    <video 
-                      src={msg.content || ''} 
-                      controls
-                      className="rounded-xl max-w-full h-auto max-h-64"
-                    />
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  )}
-                  <div className={`flex items-center gap-1 text-[10px] mt-1.5 ${
-                    isMyMessage ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
-                  }`}>
-                    <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    {isMyMessage && (
-                      <span className="ml-1">
-                        {msg.read_at ? (
-                          <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
-                        ) : (
-                          <Check className="h-3.5 w-3.5" />
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-          {isOtherUserTyping && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <TypingIndicator />
-            </motion.div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            )}
+          </div>
+        </motion.div>
 
-        {/* Input */}
-        <div className="backdrop-blur-xl bg-background/80 border-t border-border/50 p-4">
-          {imagePreview && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-3 relative inline-block"
-            >
-              <img src={imagePreview} alt="Preview" className="h-20 rounded-xl border shadow-lg" />
-              <Button
-                size="icon"
-                variant="destructive"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg"
-                onClick={() => {
-                  setImageFile(null);
-                  setImagePreview(null);
-                }}
+        {/* Messages Area */}
+        <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-3' : 'p-6'}`}>
+          <div className={!isMobile ? 'max-w-4xl mx-auto space-y-4' : 'space-y-3'}>
+            {messages.length === 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16"
               >
-                ×
-              </Button>
-            </motion.div>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              className="hidden"
-              onChange={handleImageSelect}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 rounded-full border-border/50"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Input 
-              value={message} 
-              onChange={handleInputChange} 
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..." 
-              className="flex-1 rounded-full h-11 bg-muted/50 border-0 focus:ring-2 focus:ring-primary/20"
-            />
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={(!message.trim() && !imageFile) || sending}
-              size="icon"
-              className="flex-shrink-0 rounded-full shadow-lg shadow-primary/25"
-            >
-              {sending ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+                <div className={`rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6 ${
+                  isMobile ? 'w-20 h-20' : 'w-24 h-24'
+                }`}>
+                  <span className={isMobile ? 'text-3xl' : 'text-4xl'}>👋</span>
+                </div>
+                <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
+                  No messages yet. Start the conversation!
+                </p>
+              </motion.div>
+            )}
+            
+            {messages.map((msg, index) => {
+              const isMyMessage = userProfileId && msg.sender_id === userProfileId;
+              const showDateSeparator = shouldShowDateSeparator(index);
+              
+              return (
+                <div key={msg.id}>
+                  {showDateSeparator && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center my-6"
+                    >
+                      <div className={`px-4 py-1.5 rounded-full bg-muted/50 backdrop-blur-sm ${
+                        isMobile ? 'text-xs' : 'text-sm'
+                      } text-muted-foreground font-medium`}>
+                        {formatDateSeparator(msg.created_at)}
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: index * 0.01 }}
+                    className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`max-w-[80%] ${isMobile ? 'max-w-[85%]' : 'max-w-[70%]'}`}>
+                      <div className={`px-4 py-3 shadow-sm ${
+                        isMyMessage 
+                          ? `bg-primary text-primary-foreground ${isMobile ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-br-sm'}` 
+                          : `bg-card backdrop-blur-sm border border-border/50 ${isMobile ? 'rounded-2xl rounded-bl-md' : 'rounded-2xl rounded-bl-sm'}`
+                      }`}>
+                        {msg.message_type === 'image' ? (
+                          <img 
+                            src={msg.content || ''} 
+                            alt="Shared image" 
+                            className={`rounded-xl max-w-full h-auto ${isMobile ? 'max-h-52' : 'max-h-72'}`}
+                          />
+                        ) : msg.message_type === 'video' ? (
+                          <video 
+                            src={msg.content || ''} 
+                            controls
+                            className={`rounded-xl max-w-full h-auto ${isMobile ? 'max-h-52' : 'max-h-72'}`}
+                          />
+                        ) : (
+                          <p className={`whitespace-pre-wrap leading-relaxed ${isMobile ? 'text-sm' : 'text-base'}`}>
+                            {msg.content}
+                          </p>
+                        )}
+                      </div>
+                      <div className={`flex items-center gap-1.5 mt-1 ${isMyMessage ? 'justify-end' : 'justify-start'} px-1`}>
+                        <span className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                          {formatMessageTime(msg.created_at)}
+                        </span>
+                        {isMyMessage && (
+                          <span>
+                            {msg.read_at ? (
+                              <CheckCheck className={`text-blue-500 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            ) : (
+                              <Check className={`text-muted-foreground ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              );
+            })}
+            
+            {isOtherUserTyping && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <TypingIndicator />
+              </motion.div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
+
+        {/* Input Area */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={`backdrop-blur-xl border-t border-border/50 ${
+            isMobile 
+              ? 'bg-background/95 p-3' 
+              : 'bg-card/80 p-4'
+          }`}
+        >
+          <div className={!isMobile ? 'max-w-4xl mx-auto' : ''}>
+            {imagePreview && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-3 relative inline-block"
+              >
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className={`rounded-xl border-2 border-primary/20 shadow-lg ${isMobile ? 'h-16' : 'h-24'}`} 
+                />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className={`absolute -top-2 -right-2 rounded-full shadow-lg ${isMobile ? 'h-5 w-5 text-xs' : 'h-6 w-6'}`}
+                  onClick={() => {
+                    setImageFile(null);
+                    setImagePreview(null);
+                  }}
+                >
+                  ×
+                </Button>
+              </motion.div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex-shrink-0 rounded-full hover:bg-muted ${isMobile ? 'h-10 w-10' : 'h-11 w-11'}`}
+              >
+                <ImageIcon className={isMobile ? 'h-5 w-5' : 'h-5 w-5'} />
+              </Button>
+              <Input 
+                value={message} 
+                onChange={handleInputChange} 
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..." 
+                className={`flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                  isMobile ? 'h-10 text-sm' : 'h-12 text-base'
+                }`}
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={(!message.trim() && !imageFile) || sending}
+                size="icon"
+                className={`flex-shrink-0 rounded-full shadow-lg shadow-primary/25 ${isMobile ? 'h-10 w-10' : 'h-11 w-11'}`}
+              >
+                {sending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className={isMobile ? 'h-4 w-4' : 'h-5 w-5'} />
+                )}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </PageTransition>
   );
