@@ -246,71 +246,71 @@ const Reels = () => {
                 </div>
 
                 {/* Action Buttons - Right Side */}
-                <div className="absolute right-4 bottom-32 flex flex-col items-center gap-5 z-20">
+                <div className="absolute right-3 bottom-32 flex flex-col items-center gap-4 z-20">
                   {/* Like */}
                   <button
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-0.5"
                     onClick={() => toggleLike(reel.id)}
                   >
                     <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md",
+                      "w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md",
                       isLiked(reel.id) ? "bg-red-500/30" : "bg-white/20"
                     )}>
                       <Heart className={cn(
-                        "h-6 w-6",
+                        "h-5 w-5",
                         isLiked(reel.id) ? "fill-red-500 text-red-500" : "text-white"
                       )} />
                     </div>
-                    <span className="text-white text-xs font-semibold">{formatNumber(reel.likes || 0)}</span>
+                    <span className="text-white text-[10px] font-medium">{formatNumber(reel.likes || 0)}</span>
                   </button>
 
                   {/* Comment */}
                   <button
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-0.5"
                     onClick={() => navigate(`/reel/${reel.id}/comments`)}
                   >
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                      <MessageCircle className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <MessageCircle className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-white text-xs font-semibold">{formatNumber(reel.comments || 0)}</span>
+                    <span className="text-white text-[10px] font-medium">{formatNumber(reel.comments || 0)}</span>
                   </button>
 
                   {/* Share */}
                   <button
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-0.5"
                     onClick={() => setShareSheet({isOpen: true, reel})}
                   >
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                      <Share className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Share className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-white text-xs font-semibold">Share</span>
+                    <span className="text-white text-[10px] font-medium">Share</span>
                   </button>
 
                   {/* Save */}
                   <button
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-0.5"
                     onClick={() => toggleSave(reel.id)}
                   >
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                       <Bookmark className={cn(
-                        "h-6 w-6 text-white",
+                        "h-5 w-5 text-white",
                         isSaved(reel.id) && "fill-white"
                       )} />
                     </div>
-                    <span className="text-white text-xs font-semibold">Save</span>
+                    <span className="text-white text-[10px] font-medium">Save</span>
                   </button>
 
                   {/* Mute/Unmute */}
                   {reel.video_url && (
                     <button
-                      className="flex flex-col items-center gap-1"
+                      className="flex flex-col items-center gap-0.5"
                       onClick={() => toggleMute(reel.id)}
                     >
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                         {mutedReels.has(reel.id) ? (
-                          <VolumeX className="h-6 w-6 text-white" />
+                          <VolumeX className="h-5 w-5 text-white" />
                         ) : (
-                          <Volume2 className="h-6 w-6 text-white" />
+                          <Volume2 className="h-5 w-5 text-white" />
                         )}
                       </div>
                     </button>
@@ -527,69 +527,69 @@ const Reels = () => {
               </div>
 
               {/* Action Buttons - Right Side */}
-              <div className="absolute right-4 bottom-24 flex flex-col items-center gap-4 z-20">
+              <div className="absolute right-3 bottom-24 flex flex-col items-center gap-3 z-20">
                 <motion.button 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="flex flex-col items-center gap-1" 
+                  className="flex flex-col items-center gap-0.5" 
                   onClick={() => toggleLike(selectedReel.id)}
                 >
                   <div className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 transition-all",
+                    "w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 transition-all",
                     isLiked(selectedReel.id) ? "bg-red-500/30" : "bg-white/10 hover:bg-white/20"
                   )}>
                     <Heart className={cn(
-                      "h-7 w-7 transition-all",
+                      "h-5 w-5 transition-all",
                       isLiked(selectedReel.id) ? "fill-red-500 text-red-500" : "text-white"
                     )} />
                   </div>
-                  <span className="text-white text-sm font-semibold">{formatNumber(selectedReel.likes || 0)}</span>
+                  <span className="text-white text-xs font-medium">{formatNumber(selectedReel.likes || 0)}</span>
                 </motion.button>
                 
                 <motion.button 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="flex flex-col items-center gap-1" 
+                  className="flex flex-col items-center gap-0.5" 
                   onClick={() => navigate(`/reel/${selectedReel.id}/comments`)}
                 >
-                  <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
-                    <MessageCircle className="h-7 w-7 text-white" />
+                  <div className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
+                    <MessageCircle className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white text-sm font-semibold">{formatNumber(selectedReel.comments || 0)}</span>
+                  <span className="text-white text-xs font-medium">{formatNumber(selectedReel.comments || 0)}</span>
                 </motion.button>
                 
                 <motion.button 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="flex flex-col items-center gap-1" 
+                  className="flex flex-col items-center gap-0.5" 
                   onClick={() => setShareSheet({isOpen: true, reel: selectedReel})}
                 >
-                  <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
-                    <Share className="h-7 w-7 text-white" />
+                  <div className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
+                    <Share className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white text-sm font-semibold">Share</span>
+                  <span className="text-white text-xs font-medium">Share</span>
                 </motion.button>
                 
                 <motion.button 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="flex flex-col items-center gap-1" 
+                  className="flex flex-col items-center gap-0.5" 
                   onClick={() => toggleSave(selectedReel.id)}
                 >
                   <div className={cn(
-                    "w-14 h-14 rounded-full backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all",
+                    "w-11 h-11 rounded-full backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all",
                     isSaved(selectedReel.id) ? "bg-primary/30" : "bg-white/10 hover:bg-white/20"
                   )}>
                     <Bookmark className={cn(
-                      "h-7 w-7 text-white transition-all",
+                      "h-5 w-5 text-white transition-all",
                       isSaved(selectedReel.id) && "fill-white"
                     )} />
                   </div>
-                  <span className="text-white text-sm font-semibold">Save</span>
+                  <span className="text-white text-xs font-medium">Save</span>
                 </motion.button>
                 
                 {selectedReel.video_url && (
@@ -597,14 +597,14 @@ const Reels = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="flex flex-col items-center gap-1" 
+                    className="flex flex-col items-center gap-0.5" 
                     onClick={() => toggleMute(selectedReel.id)}
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
+                    <div className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/20 transition-all">
                       {mutedReels.has(selectedReel.id) ? (
-                        <VolumeX className="h-7 w-7 text-white" />
+                        <VolumeX className="h-5 w-5 text-white" />
                       ) : (
-                        <Volume2 className="h-7 w-7 text-white" />
+                        <Volume2 className="h-5 w-5 text-white" />
                       )}
                     </div>
                   </motion.button>
