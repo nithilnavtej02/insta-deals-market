@@ -134,6 +134,7 @@ const CreateAccount = () => {
     try {
       const phone = formData.phone ? formData.countryCode + formData.phone : null;
 
+      // Direct signup without email verification
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -162,15 +163,18 @@ const CreateAccount = () => {
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait briefly for profile trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      // Update profile with additional info
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
           email: formData.email,
           username: formData.username.toLowerCase().trim(),
           display_name: formData.username,
-          phone: phone
+          phone: phone,
+          mobile_number: phone
         })
         .eq('user_id', authData.user.id);
 
@@ -178,12 +182,14 @@ const CreateAccount = () => {
         console.error('Profile update error:', updateError);
       }
 
+      // Auto sign-in after account creation
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
       if (signInError) {
+        // If auto-login fails, redirect to login page
         toast.success("Account created! Please sign in.");
         navigate("/auth");
         return;

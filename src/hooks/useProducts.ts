@@ -56,9 +56,30 @@ export function useProducts() {
     if (productsCache.data && Date.now() - productsCache.timestamp < CACHE_DURATION) {
       setProducts(productsCache.data);
       setLoading(false);
-      return;
     }
     fetchProducts();
+
+    // Set up realtime subscription for instant product updates
+    const channel = supabase
+      .channel('products-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          // Invalidate cache and refresh on any product change
+          productsCache = { data: null, timestamp: 0 };
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchProducts = async () => {
@@ -84,7 +105,7 @@ export function useProducts() {
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(50); // Increased limit for better UX
+        .limit(50);
 
       if (error) throw error;
       const typedData = (data as unknown) as Product[] || [];
